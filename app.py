@@ -59,8 +59,14 @@ def parse_chart_notes_for_citations(chart_notes):
             match = citation_pattern.search(sentence)
             if match:
                 citation_id, citation_text = match.groups()
+                # Debug statement
+                print(f"Found citation: {citation_text} for sentence: {sentence.strip()}")
                 citations[sentence.strip()] = citation_text.strip()
             sentences.append(sentence.strip())
+    
+    # Debug statement
+    print(f"Sentences: {sentences}")
+    print(f"Citations: {citations}")
     
     return sentences, citations
 
@@ -68,6 +74,10 @@ def highlight_citation(transcript, citation_text):
     """Highlight the part of the transcript matching the citation."""
     # Escaping special characters in the citation text for regex
     citation_text_escaped = re.escape(citation_text)
+    
+    # Debug statement
+    print(f"Highlighting citation: {citation_text_escaped} in transcript.")
+    
     highlighted = re.sub(citation_text_escaped, f"**{citation_text}**", transcript, flags=re.IGNORECASE)
     return highlighted
 
