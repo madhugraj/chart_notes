@@ -1,8 +1,7 @@
 import streamlit as st
 import json
-import os
+import re
 import google.generativeai as genai
-import pandas as pd
 
 # Retrieve the API key from secrets
 api_key = st.secrets["api_key"]
@@ -47,12 +46,31 @@ def generate_chart_notes_with_citations(transcript, template):
     content_text = response.candidates[0].content.parts[0].text.strip()
     return content_text
 
-def download_button(data, filename, file_label):
-    """Generate a download button for the data."""
-    st.download_button(label=file_label, data=data, file_name=filename, mime="text/plain")
+def parse_chart_notes_for_citations(chart_notes):
+    """Parse the chart notes to extract sentences and associated citations."""
+    citation_pattern = re.compile(r'\[CITATION\[(\d+)\]: ([^\]]+)\]')
+    citations = {}
+    sentences = []
+    
+    # Split the chart notes by newlines and periods to get individual sentences
+    for line in chart_notes.splitlines():
+        line_sentences = line.split('. ')
+        for sentence in line_sentences:
+            match = citation_pattern.search(sentence)
+            if match:
+                citation_id, citation_text = match.groups()
+                citations[sentence] = citation_text
+            sentences.append(sentence)
+    
+    return sentences, citations
+
+def highlight_citation(transcript, citation_text):
+    """Highlight the part of the transcript matching the citation."""
+    highlighted = transcript.replace(citation_text, f"**{citation_text}**")
+    return highlighted
 
 # Streamlit app interface
-st.title("Chart Notes Generator with Citations")
+st.title("Chart Notes Generator with Dynamic Citations")
 
 # Upload file
 uploaded_file = st.file_uploader("Upload a JSON or TXT file containing the transcript", type=["json", "txt"])
@@ -74,16 +92,26 @@ if uploaded_file:
     if st.button("Generate Chart Notes"):
         chart_notes_with_citations = generate_chart_notes_with_citations(transcript, template)
         
+        # Parse the chart notes to get sentences and citations
+        sentences, citations = parse_chart_notes_for_citations(chart_notes_with_citations)
+
         # Side-by-side layout
         col1, col2 = st.columns(2)
         
         with col1:
             st.subheader("Transcript")
-            st.text_area("Transcript", value=transcript, height=300)
+            transcript_area = st.empty()
+            transcript_area.text_area("Transcript", value=transcript, height=300)
 
         with col2:
             st.subheader("Generated Chart Notes with Citations")
+            selected_sentence = st.selectbox("Select a sentence to see its citation:", sentences)
             st.text_area("Chart Notes", value=chart_notes_with_citations, height=300)
 
+            if selected_sentence in citations:
+                citation_text = citations[selected_sentence]
+                highlighted_transcript = highlight_citation(transcript, citation_text)
+                transcript_area.text_area("Transcript", value=highlighted_transcript, height=300)
+
         # Download button for chart notes
-        download_button(chart_notes_with_citations, "chart_notes.txt", "Download Chart Notes")
+        st.download_button("Download Chart Notes", data=chart_notes_with_citations, file_name="chart_notes.txt", mime="text/plain")
