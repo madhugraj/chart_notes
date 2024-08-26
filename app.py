@@ -94,7 +94,7 @@ if uploaded_file:
         
         # Parse the chart notes to get notes without citations and the citation dictionary
         notes, citations_dict = parse_chart_notes_for_citations(chart_notes_with_citations)
-        
+
         # Side-by-side layout
         col1, col2 = st.columns(2)
         
@@ -117,14 +117,6 @@ if uploaded_file:
                     st.text_area("Citation", value=citation, height=100)
                     highlighted_transcript = highlight_citation(transcript, citation)
                     transcript_area.text_area("Transcript", value=highlighted_transcript, height=300)
-        
-        # Download button for the citation dictionary as JSON
-        st.download_button(
-            label="Download Citations Dictionary as JSON",
-            data=json.dumps(citations_dict, indent=4),
-            file_name="citations_dictionary.json",
-            mime="application/json"
-        )
-        
+
         # Download button for chart notes
         st.download_button("Download Chart Notes", data="\n".join(notes), file_name="chart_notes.txt", mime="text/plain")
