@@ -59,14 +59,16 @@ def parse_chart_notes_for_citations(chart_notes):
             match = citation_pattern.search(sentence)
             if match:
                 citation_id, citation_text = match.groups()
-                citations[sentence] = citation_text
-            sentences.append(sentence)
+                citations[sentence.strip()] = citation_text.strip()
+            sentences.append(sentence.strip())
     
     return sentences, citations
 
 def highlight_citation(transcript, citation_text):
     """Highlight the part of the transcript matching the citation."""
-    highlighted = transcript.replace(citation_text, f"**{citation_text}**")
+    # Escaping special characters in the citation text for regex
+    citation_text_escaped = re.escape(citation_text)
+    highlighted = re.sub(citation_text_escaped, f"**{citation_text}**", transcript, flags=re.IGNORECASE)
     return highlighted
 
 # Streamlit app interface
