@@ -48,11 +48,10 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(chart_notes):
     """Parse the chart notes to extract sentences and associated citations."""
-    citation_pattern = re.compile(r'\[CITATION\[(\d+)\]: ([^\]]+)\]')
+    citation_pattern = re.compile(r'\[CITATION\[\d+\]: ([^\]]+)\]')
     notes = []
     citations_dict = {}
     
-    # Split the chart notes by newlines and periods to get individual sentences
     for line in chart_notes.splitlines():
         clean_sentence = re.sub(r'\[CITATION\[.*?\]\]', '', line).strip()
         if clean_sentence:  # Only add non-empty sentences
@@ -60,7 +59,7 @@ def parse_chart_notes_for_citations(chart_notes):
         
         citations = citation_pattern.findall(line)
         if citations:
-            citations_dict[clean_sentence] = [citation_text for _, citation_text in citations]
+            citations_dict[clean_sentence] = citations
 
     return notes, citations_dict
 
