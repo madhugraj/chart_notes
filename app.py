@@ -55,7 +55,8 @@ def parse_chart_notes_for_citations(chart_notes):
     # Split the chart notes by newlines and periods to get individual sentences
     for line in chart_notes.splitlines():
         clean_sentence = re.sub(r'\[CITATION\[.*?\]\]', '', line).strip()
-        notes.append(clean_sentence)
+        if clean_sentence:  # Only add non-empty sentences
+            notes.append(clean_sentence)
         
         citations = citation_pattern.findall(line)
         if citations:
