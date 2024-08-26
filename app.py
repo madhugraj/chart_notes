@@ -1,6 +1,8 @@
 import streamlit as st
 import json
+import os
 import google.generativeai as genai
+import pandas as pd
 
 # Retrieve the API key from secrets
 api_key = st.secrets["api_key"]
@@ -45,28 +47,43 @@ def generate_chart_notes_with_citations(transcript, template):
     content_text = response.candidates[0].content.parts[0].text.strip()
     return content_text
 
+def download_button(data, filename, file_label):
+    """Generate a download button for the data."""
+    st.download_button(label=file_label, data=data, file_name=filename, mime="text/plain")
+
 # Streamlit app interface
 st.title("Chart Notes Generator with Citations")
-
-# Step 1: Get the template input from the user
-template_input = st.text_area("Enter your chart note template", height=150)
 
 # Upload file
 uploaded_file = st.file_uploader("Upload a JSON or TXT file containing the transcript", type=["json", "txt"])
 
-if uploaded_file and template_input:
+if uploaded_file:
+    # Template input from user
+    template = st.text_area("Paste your template here:")
+
     if uploaded_file.type == "application/json":
         # Process JSON file
         transcript = extract_transcript_from_json(uploaded_file)
         st.write("Transcript extracted from JSON:")
-        st.text(transcript)
     elif uploaded_file.type == "text/plain":
         # Process TXT file
         transcript = uploaded_file.read().decode("utf-8")
         st.write("Transcript from TXT file:")
-        st.text(transcript)
     
     # Generate chart notes with citations
-    chart_notes_with_citations = generate_chart_notes_with_citations(transcript, template_input)
-    st.subheader("Generated Chart Notes with Citations")
-    st.text_area("Chart Notes", value=chart_notes_with_citations, height=300)
+    if st.button("Generate Chart Notes"):
+        chart_notes_with_citations = generate_chart_notes_with_citations(transcript, template)
+        
+        # Side-by-side layout
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("Transcript")
+            st.text_area("Transcript", value=transcript, height=300)
+
+        with col2:
+            st.subheader("Generated Chart Notes with Citations")
+            st.text_area("Chart Notes", value=chart_notes_with_citations, height=300)
+
+        # Download button for chart notes
+        download_button(chart_notes_with_citations, "chart_notes.txt", "Download Chart Notes")
