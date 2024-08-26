@@ -1,10 +1,8 @@
 import streamlit as st
 import json
-import os
 import google.generativeai as genai
 
-
-# Retrieve the API key and password from secrets
+# Retrieve the API key from secrets
 api_key = st.secrets["api_key"]
 
 # Configure the API key
@@ -50,14 +48,13 @@ def generate_chart_notes_with_citations(transcript, template):
 # Streamlit app interface
 st.title("Chart Notes Generator with Citations")
 
+# Step 1: Get the template input from the user
+template_input = st.text_area("Enter your chart note template", height=150)
+
 # Upload file
 uploaded_file = st.file_uploader("Upload a JSON or TXT file containing the transcript", type=["json", "txt"])
 
-if uploaded_file:
-    # Read the template file
-    with open('/content/drive/MyDrive/ACN/CNTemplate.txt', 'r') as f2:
-        template = f2.read()
-
+if uploaded_file and template_input:
     if uploaded_file.type == "application/json":
         # Process JSON file
         transcript = extract_transcript_from_json(uploaded_file)
@@ -70,6 +67,6 @@ if uploaded_file:
         st.text(transcript)
     
     # Generate chart notes with citations
-    chart_notes_with_citations = generate_chart_notes_with_citations(transcript, template)
+    chart_notes_with_citations = generate_chart_notes_with_citations(transcript, template_input)
     st.subheader("Generated Chart Notes with Citations")
     st.text_area("Chart Notes", value=chart_notes_with_citations, height=300)
