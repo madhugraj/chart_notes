@@ -95,6 +95,9 @@ if uploaded_file:
         # Parse the chart notes to get notes without citations and the citation dictionary
         notes, citations_dict = parse_chart_notes_for_citations(chart_notes_with_citations)
 
+        # Print the dictionary for debugging
+        st.write("Citations Dictionary:", citations_dict)
+        
         # Side-by-side layout
         col1, col2 = st.columns(2)
         
@@ -105,8 +108,10 @@ if uploaded_file:
 
         with col2:
             st.subheader("Generated Chart Notes")
-            selected_note = st.selectbox("Select a note to see its citation:", notes)
             st.text_area("Chart Notes", value="\n".join(notes), height=300)
+            
+            # Select note to view citations
+            selected_note = st.selectbox("Select a note to see its citation:", notes)
 
             if selected_note in citations_dict:
                 citations = citations_dict[selected_note]
