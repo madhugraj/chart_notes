@@ -35,20 +35,6 @@ def extract_transcript_from_json(json_file):
     
     return transcript_text.strip()
 
-def generate_chart_notes_with_citations_old(transcript, template):
-    """Generate chart notes with citations using the model."""
-    prompt = f"""Create chart notes as per the {template} for the {transcript}. And from the following health care transcript: {transcript}
-                Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. For example, here's how to include citations:
-                1. Patient reports experiencing dizziness for the past week.
-                {{References:[1]. The patient states that she has been experiencing dizziness for the past week., [2].She was under sleeping pills}}
-                2. Patient denies any history of smoking. 
-                {{References: [3]: The patient denies smoking, [4]: He was in rehab..}}
-                3. Let the citations be in continuous numbering until and unless it is repeated"""
-    
-    response = model.generate_content([prompt])
-    content_text = response.candidates[0].content.parts[0].text.strip()
-    return content_text
-    
 def generate_chart_notes_with_citations(transcript, template):
     """Generate chart notes with citations using the model."""
     prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
@@ -101,16 +87,15 @@ def parse_chart_notes_for_citations(chart_notes):
                         citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
 
     # Debugging output to verify the cleaned notes and citations
-    #st.write("Cleaned Notes:", notes)
-    #st.write("Citations Dictionary:", citations_dict)
+    st.write("Cleaned Notes:", notes)
+    st.write("Citations Dictionary:", citations_dict)
     
     return notes, citations_dict
 
 def highlight_citation(transcript, citation_text):
     """Highlight the part of the transcript matching the citation."""
     citation_text_escaped = re.escape(citation_text)
-    highlighted = re.sub(citation_text_escaped, f"**{citation_text}**", transcript, flags=re.IGNORECASE)
-    st.write(highlighted)
+    highlighted = re.sub(citation_text_escaped, f"<mark style='background-color: yellow'>{citation_text}</mark>", transcript, flags=re.IGNORECASE)
     return highlighted
 
 def format_citations_dictionary(citations_dict):
@@ -155,7 +140,7 @@ if uploaded_file:
         with col1:
             st.subheader("Transcript")
             transcript_area = st.empty()
-            transcript_area.text_area("Transcript", value=transcript, height=300)
+            transcript_area.markdown("Transcript", unsafe_allow_html=True)
 
         with col2:
             st.subheader("Generated Chart Notes")
@@ -169,8 +154,8 @@ if uploaded_file:
                 st.write("Citations:")
                 for citation in citations:
                     st.text_area("Citation", value=citation, height=100)
-                    highlighted_transcript = highlight_citation(transcript, citation)
-                    transcript_area.text_area("Transcript", value=highlighted_transcript, height=300)
+                    highlighted_transcript = highlight_citation(transcript, citation.split(": ")[1].strip('"'))
+                    transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
 
         # Download button for chart notes
         st.download_button("Download Chart Notes", data="\n".join(notes), file_name="chart_notes.txt", mime="text/plain")
