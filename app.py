@@ -51,61 +51,60 @@ def generate_chart_notes_with_citations_old(transcript, template):
     
 def generate_chart_notes_with_citations(transcript, template):
     """Generate chart notes with citations using the model."""
-    prompt = f"""Create chart notes as per the provided template for the given healthcare transcript. 
-                Ensure the chart notes include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. 
-                Follow these guidelines:
-                1. Maintain continuous citation numbering across the entire document, without reusing or skipping numbers.
-                2. Each citation should reference a unique statement directly from the transcript.
-                3. Ensure that citations are listed sequentially and are never duplicated across different notes.
-                
-                Example format for citations:
-                1. Patient reports experiencing dizziness for the past week.
-                {{References: [1]: The patient states that she has been experiencing dizziness for the past week.}}
-                
-                2. Patient denies any history of smoking.
-                {{References: [2]: The patient denies smoking.}}
-                
-                Here is the healthcare transcript: {transcript}
-                And here is the template: {template}"""
-    
+    prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
+    1. Number the references sequentially in the order they first appear in the text.
+    2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
+    3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}.
+
+    For example:
+    1. Patient reports experiencing dizziness for the past week.
+    {{References: [1]: "The patient states that she has been experiencing dizziness for the past week.", [2]: "She was under sleeping pills."}}
+    2. Patient denies any history of smoking.
+    {{References: [3]: "The patient denies smoking.", [4]: "He was in rehab."}}"""
+
     response = model.generate_content([prompt])
     content_text = response.candidates[0].content.parts[0].text.strip()
     return content_text
 
 
-import re
-import streamlit as st
-
 def parse_chart_notes_for_citations(chart_notes):
-    """Parse the chart notes to extract sentences and associated citations."""
-    # Regex pattern to match and capture citations in the format [x]: "citation text".
+    """Parse the chart notes to extract sentences and associated citations, ensuring correct sequential numbering."""
     citation_pattern = re.compile(r'\[References: ([^}]+)\]')
-    
-    # List to store cleaned chart notes without citations
     notes = []
-    # Dictionary to store citations with corresponding cleaned notes
     citations_dict = {}
+    all_citations = {}
+    next_citation_number = 1
 
     for line in chart_notes.splitlines():
-        # Extract the citations
         citations = citation_pattern.findall(line)
-        # Remove citation text from the line
         clean_sentence = citation_pattern.sub('', line).strip()
         
-        if clean_sentence:  # Only add non-empty sentences
+        if clean_sentence:
             notes.append(clean_sentence)
-        
+
         if citations:
-            # Split the citations into individual components
-            citation_list = citations[0].split(', ')
-            citations_dict[clean_sentence] = citation_list
-    
-    # Debugging output to verify the cleaned notes and citations
-    #st.write("Cleaned Notes:", notes)
+            citation_texts = citations[0].split(', ')
+            ordered_citations = []
+            
+            for citation in citation_texts:
+                citation_number, text = re.findall(r'(\[\d+\]):\s*"(.*?)"', citation)[0]
+
+                if text not in all_citations:
+                    all_citations[text] = next_citation_number
+                    next_citation_number += 1
+
+                ordered_citations.append(f"[{all_citations[text]}]: \"{text}\"")
+            
+            citations_dict[clean_sentence] = ordered_citations
+
+    # Convert citations_dict to sequential numbers in the final output
+    for key, value in citations_dict.items():
+        citations_dict[key] = ", ".join(value)
+
+    st.write("Cleaned Notes:", notes)
     st.write("Citations Dictionary:", citations_dict)
     
     return notes, citations_dict
-
 
 def highlight_citation(transcript, citation_text):
     """Highlight the part of the transcript matching the citation."""
