@@ -48,20 +48,31 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(chart_notes):
     """Parse the chart notes to extract sentences and associated citations."""
-    citation_pattern = re.compile(r'\[CITATION\[\d+\]: ([^\]]+)\]')
+    # Regex pattern to match and remove citations
+    citation_pattern = re.compile(r'\[CITATION\[\d+\]: [^\]]+\]')
+    
+    # List to store cleaned chart notes without citations
     notes = []
+    # Dictionary to store citations with corresponding cleaned notes
     citations_dict = {}
     
     for line in chart_notes.splitlines():
-        clean_sentence = re.sub(r'\[CITATION\[.*?\]\]', '', line).strip()
+        # Remove the citation text from the line
+        clean_sentence = citation_pattern.sub('', line).strip()
+        
         if clean_sentence:  # Only add non-empty sentences
             notes.append(clean_sentence)
         
+        # Extract the citations separately
         citations = citation_pattern.findall(line)
         if citations:
             citations_dict[clean_sentence] = citations
-    st.write(notes, citations_dict)
+    
+    st.write("Cleaned Notes:", notes)
+    st.write("Citations Dictionary:", citations_dict)
+    
     return notes, citations_dict
+
 
 def highlight_citation(transcript, citation_text):
     """Highlight the part of the transcript matching the citation."""
