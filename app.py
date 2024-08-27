@@ -60,13 +60,14 @@ def parse_chart_notes_for_citations(chart_notes):
         citations = citation_pattern.findall(line)
         if citations:
             citations_dict[clean_sentence] = citations
-
+    st.write(notes, citations_dict)
     return notes, citations_dict
 
 def highlight_citation(transcript, citation_text):
     """Highlight the part of the transcript matching the citation."""
     citation_text_escaped = re.escape(citation_text)
     highlighted = re.sub(citation_text_escaped, f"**{citation_text}**", transcript, flags=re.IGNORECASE)
+    st.write(highlighted)
     return highlighted
 
 # Streamlit app interface
