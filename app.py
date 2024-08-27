@@ -129,37 +129,39 @@ if uploaded_file:
     
     # Generate chart notes with citations
     if st.button("Generate Chart Notes"):
-        chart_notes_with_citations = generate_chart_notes_with_citations(transcript, template)
+    chart_notes_with_citations = generate_chart_notes_with_citations(transcript, template)
+    
+    # Parse the chart notes to get notes without citations and the citation dictionary
+    notes, citations_dict = parse_chart_notes_for_citations(chart_notes_with_citations)
+
+    # Side-by-side layout
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Transcript")
+        transcript_area = st.empty()
+        transcript_area.markdown("Transcript", unsafe_allow_html=True)
+
+    with col2:
+        st.subheader("Generated Chart Notes")
+        st.text_area("Chart Notes", value="\n".join(notes), height=300)
         
-        # Parse the chart notes to get notes without citations and the citation dictionary
-        notes, citations_dict = parse_chart_notes_for_citations(chart_notes_with_citations)
+        # Select note to view citations
+        selected_note = st.selectbox("Select a note to see its citation:", notes)
 
-        # Side-by-side layout
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Transcript")
-            transcript_area = st.empty()
-            transcript_area.markdown("Transcript", unsafe_allow_html=True)
+        if selected_note in citations_dict:
+            citations = citations_dict[selected_note]
+            st.write("Citations:")
+            for citation in citations:
+                st.text_area("Citation", value=citation, height=100)
 
-        with col2:
-            st.subheader("Generated Chart Notes")
-            st.text_area("Chart Notes", value="\n".join(notes), height=300)
-            
-            # Select note to view citations
-            selected_note = st.selectbox("Select a note to see its citation:", notes)
-
-            if selected_note in citations_dict:
-                citations = citations_dict[selected_note]
-                st.write("Citations:")
-                for citation in citations:
-                    st.text_area("Citation", value=citation, height=100)
-                    
-                # Highlight and display the transcript with the selected citation highlighted
-                if citations:
-                    citation_text = citations[0].split(": ")[1].strip('"')
-                    highlighted_transcript = highlight_citation(transcript, citation_text)
-                    transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
+            # Highlight and display the transcript with the selected citation highlighted
+            if citations:
+                citation_text = citations[0].split(": ")[1].strip('"')
+                st.write(f"Citation Text for Highlighting: {citation_text}")  # Debugging output
+                highlighted_transcript = highlight_citation(transcript, citation_text)
+                st.write(f"Highlighted Transcript Length: {len(highlighted_transcript)}")  # Debugging output
+                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
 
         # Download button for chart notes
         st.download_button("Download Chart Notes", data="\n".join(notes), file_name="chart_notes.txt", mime="text/plain")
