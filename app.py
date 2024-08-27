@@ -65,7 +65,8 @@ def parse_chart_notes_for_citations(chart_notes):
         clean_sentence = citation_pattern.sub('', line).strip()
 
         if clean_sentence:
-            notes.append(clean_sentence)
+            if citations:
+                notes.append(clean_sentence)
         
         if citations:
             # Extract individual citations
@@ -91,18 +92,15 @@ def parse_chart_notes_for_citations(chart_notes):
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
     if selected_note in citations_dict:
-        # Collect all citation texts for the selected note
         citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
-        highlighted_transcript = transcript
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text)
-            highlighted_transcript = re.sub(
+            transcript = re.sub(
                 citation_text_escaped, 
                 f"<mark style='background-color: yellow'>{citation_text}</mark>", 
-                highlighted_transcript, 
+                transcript, 
                 flags=re.IGNORECASE
             )
-        return highlighted_transcript
     return transcript
 
 def format_citations_dictionary(citations_dict):
@@ -128,11 +126,9 @@ if uploaded_file:
     if uploaded_file.type == "application/json":
         # Process JSON file
         transcript = extract_transcript_from_json(uploaded_file)
-        st.write("Transcript extracted from JSON:")
     elif uploaded_file.type == "text/plain":
         # Process TXT file
         transcript = uploaded_file.read().decode("utf-8")
-        st.write("Transcript from TXT file:")
     
     # Generate chart notes with citations
     if st.button("Generate Chart Notes"):
@@ -156,15 +152,15 @@ if uploaded_file:
             # Select note to view citations
             selected_note = st.selectbox("Select a note to see its citation:", notes)
 
+            # Update the transcript with highlights based on the selected note
+            highlighted_transcript = highlight_citations(transcript, citations_dict, selected_note)
+            transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
+
             if selected_note in citations_dict:
                 citations = citations_dict[selected_note]
                 st.write("Citations:")
                 for citation in citations:
                     st.text_area("Citation", value=citation, height=100)
-
-                # Highlight and display the transcript with the selected citation highlighted
-                highlighted_transcript = highlight_citations(transcript, citations_dict, selected_note)
-                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
 
         # Download button for chart notes
         st.download_button("Download Chart Notes", data="\n".join(notes), file_name="chart_notes.txt", mime="text/plain")
