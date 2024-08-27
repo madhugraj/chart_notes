@@ -66,10 +66,9 @@ def generate_chart_notes_with_citations(transcript, template):
     content_text = response.candidates[0].content.parts[0].text.strip()
     return content_text
 
-
 def parse_chart_notes_for_citations(chart_notes):
     """Parse the chart notes to extract sentences and associated citations, ensuring correct sequential numbering."""
-    citation_pattern = re.compile(r'\[References: ([^}]+)\]')
+    citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
     all_citations = {}
@@ -78,29 +77,30 @@ def parse_chart_notes_for_citations(chart_notes):
     for line in chart_notes.splitlines():
         citations = citation_pattern.findall(line)
         clean_sentence = citation_pattern.sub('', line).strip()
-        
+
         if clean_sentence:
             notes.append(clean_sentence)
-
+        
         if citations:
+            # Extract individual citations
             citation_texts = citations[0].split(', ')
-            ordered_citations = []
-            
             for citation in citation_texts:
-                citation_number, text = re.findall(r'(\[\d+\]):\s*"(.*?)"', citation)[0]
+                match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
+                if match:
+                    citation_number, citation_text = match.groups()
+                    
+                    # Check if this citation text has already been assigned a number
+                    if citation_text not in all_citations:
+                        all_citations[citation_text] = f"[{next_citation_number}]"
+                        next_citation_number += 1
+                    
+                    # Add the citation to the dictionary, associated with the clean sentence
+                    if clean_sentence in citations_dict:
+                        citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
+                    else:
+                        citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
 
-                if text not in all_citations:
-                    all_citations[text] = next_citation_number
-                    next_citation_number += 1
-
-                ordered_citations.append(f"[{all_citations[text]}]: \"{text}\"")
-            
-            citations_dict[clean_sentence] = ordered_citations
-
-    # Convert citations_dict to sequential numbers in the final output
-    for key, value in citations_dict.items():
-        citations_dict[key] = ", ".join(value)
-
+    # Debugging output to verify the cleaned notes and citations
     st.write("Cleaned Notes:", notes)
     st.write("Citations Dictionary:", citations_dict)
     
