@@ -43,7 +43,7 @@ def generate_chart_notes_with_citations_old(transcript, template):
                 {{References:[1]. The patient states that she has been experiencing dizziness for the past week., [2].She was under sleeping pills}}
                 2. Patient denies any history of smoking. 
                 {{References: [3]: The patient denies smoking, [4]: He was in rehab..}}
-                3. Let the citations be in continuous numbering untill and unless it is repeated"""
+                3. Let the citations be in continuous numbering until and unless it is repeated"""
     
     response = model.generate_content([prompt])
     content_text = response.candidates[0].content.parts[0].text.strip()
@@ -113,6 +113,16 @@ def highlight_citation(transcript, citation_text):
     st.write(highlighted)
     return highlighted
 
+def format_citations_dictionary(citations_dict):
+    """Format citations dictionary as a string for download."""
+    formatted_citations = []
+    for note, citations in citations_dict.items():
+        formatted_citations.append(f"Note: {note}")
+        for citation in citations:
+            formatted_citations.append(f"  {citation}")
+        formatted_citations.append("")  # Add a blank line between notes
+    return "\n".join(formatted_citations)
+
 # Streamlit app interface
 st.title("Chart Notes Generator with Dynamic Citations")
 
@@ -164,3 +174,7 @@ if uploaded_file:
 
         # Download button for chart notes
         st.download_button("Download Chart Notes", data="\n".join(notes), file_name="chart_notes.txt", mime="text/plain")
+
+        # Download button for citations dictionary
+        citations_text = format_citations_dictionary(citations_dict)
+        st.download_button("Download Citations Dictionary", data=citations_text, file_name="citations_dictionary.txt", mime="text/plain")
