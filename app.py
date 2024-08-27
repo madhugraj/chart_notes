@@ -101,8 +101,8 @@ def parse_chart_notes_for_citations(chart_notes):
                         citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
 
     # Debugging output to verify the cleaned notes and citations
-    st.write("Cleaned Notes:", notes)
-    st.write("Citations Dictionary:", citations_dict)
+    #st.write("Cleaned Notes:", notes)
+    #st.write("Citations Dictionary:", citations_dict)
     
     return notes, citations_dict
 
