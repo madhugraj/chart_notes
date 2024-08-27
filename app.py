@@ -35,7 +35,7 @@ def extract_transcript_from_json(json_file):
     
     return transcript_text.strip()
 
-def generate_chart_notes_with_citations(transcript, template):
+def generate_chart_notes_with_citations_old(transcript, template):
     """Generate chart notes with citations using the model."""
     prompt = f"""Create chart notes as per the {template} for the {transcript}. And from the following health care transcript: {transcript}
                 Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. For example, here's how to include citations:
@@ -48,16 +48,35 @@ def generate_chart_notes_with_citations(transcript, template):
     response = model.generate_content([prompt])
     content_text = response.candidates[0].content.parts[0].text.strip()
     return content_text
-
+    
+def generate_chart_notes_with_citations(transcript, template):
+    """Generate chart notes with citations using the model."""
+    prompt = f"""Create chart notes as per the provided template for the given healthcare transcript. 
+                Ensure the chart notes include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. 
+                Follow these guidelines:
+                1. Maintain continuous citation numbering across the entire document, without reusing or skipping numbers.
+                2. Each citation should reference a unique statement directly from the transcript.
+                3. Ensure that citations are listed sequentially and are never duplicated across different notes.
+                
+                Example format for citations:
+                1. Patient reports experiencing dizziness for the past week.
+                {{References: [1]: The patient states that she has been experiencing dizziness for the past week.}}
+                
+                2. Patient denies any history of smoking.
+                {{References: [2]: The patient denies smoking.}}
+                
+                Here is the healthcare transcript: {transcript}
+                And here is the template: {template}"""
     
     response = model.generate_content([prompt])
     content_text = response.candidates[0].content.parts[0].text.strip()
     return content_text
 
+
 def parse_chart_notes_for_citations(chart_notes):
     """Parse the chart notes to extract sentences and associated citations."""
-    # Regex pattern to match and remove citations in the new format
-    citation_pattern = re.compile(r'\{References: (\[\d+\]: [^}]+)\}')
+    # Regex pattern to match and capture citations in the new format
+    citation_pattern = re.compile(r'\{References:\s*(\[\d+\]:[^}]+)\}')
     
     # List to store cleaned chart notes without citations
     notes = []
@@ -65,14 +84,13 @@ def parse_chart_notes_for_citations(chart_notes):
     citations_dict = {}
     
     for line in chart_notes.splitlines():
-        # Remove the citation text from the line
+        # Extract the citations and clean the note by removing them
+        citations = citation_pattern.findall(line)
         clean_sentence = citation_pattern.sub('', line).strip()
         
         if clean_sentence:  # Only add non-empty sentences
             notes.append(clean_sentence)
         
-        # Extract the citations separately
-        citations = citation_pattern.findall(line)
         if citations:
             citations_dict[clean_sentence] = citations
     
