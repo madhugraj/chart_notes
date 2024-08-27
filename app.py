@@ -87,8 +87,8 @@ def parse_chart_notes_for_citations(chart_notes):
                         citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
 
     # Debugging output to verify the cleaned notes and citations
-    st.write("Cleaned Notes:", notes)
-    st.write("Citations Dictionary:", citations_dict)
+    #st.write("Cleaned Notes:", notes)
+    #st.write("Citations Dictionary:", citations_dict)
     
     return notes, citations_dict
 
@@ -154,7 +154,11 @@ if uploaded_file:
                 st.write("Citations:")
                 for citation in citations:
                     st.text_area("Citation", value=citation, height=100)
-                    highlighted_transcript = highlight_citation(transcript, citation.split(": ")[1].strip('"'))
+                    
+                # Highlight and display the transcript with the selected citation highlighted
+                if citations:
+                    citation_text = citations[0].split(": ")[1].strip('"')
+                    highlighted_transcript = highlight_citation(transcript, citation_text)
                     transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
 
         # Download button for chart notes
