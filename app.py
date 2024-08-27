@@ -93,10 +93,13 @@ def highlight_citations(transcript, citations_dict, selected_note):
     if selected_note in citations_dict:
         # Collect all citation texts for the selected note
         citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
+        st.write(f"Original Transcript: {transcript[:500]}")  # Debugging output
+        st.write(f"Selected Note: {selected_note}")  # Debugging output
+        st.write(f"Citation Texts to Highlight: {citation_texts}")  # Debugging output
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text)
             transcript = re.sub(citation_text_escaped, f"<mark style='background-color: yellow'>{citation_text}</mark>", transcript, flags=re.IGNORECASE)
-    st.write(transcript)
+            st.write(f"Highlighted Transcript (Part): {transcript[:500]}")  # Debugging output
     return transcript
 
 def format_citations_dictionary(citations_dict):
