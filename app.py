@@ -40,9 +40,10 @@ def generate_chart_notes_with_citations(transcript, template):
     prompt = f"""Create chart notes as per the {template} for the {transcript}. And from the following health care transcript: {transcript}
                 Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. For example, here's how to include citations:
                 1. Patient reports experiencing dizziness for the past week.
-                {{References: CITATION[1]: The patient states that she has been experiencing dizziness for the past week., CITATION[2]: She was under sleeping pills}}
+                {{References:[1]. The patient states that she has been experiencing dizziness for the past week., [2].She was under sleeping pills}}
                 2. Patient denies any history of smoking. 
-                {{References: CITATION[3]: The patient denies smoking, CITATION[4]: He was in rehab..}} """
+                {{References: [3]: The patient denies smoking, [4]: He was in rehab..}}
+                3. Let the citations be in continuous numbering untill and unless it is repeated"""
     
     response = model.generate_content([prompt])
     content_text = response.candidates[0].content.parts[0].text.strip()
@@ -56,7 +57,7 @@ def generate_chart_notes_with_citations(transcript, template):
 def parse_chart_notes_for_citations(chart_notes):
     """Parse the chart notes to extract sentences and associated citations."""
     # Regex pattern to match and remove citations in the new format
-    citation_pattern = re.compile(r'\{References: (CITATION\[\d+\]: [^}]+)\}')
+    citation_pattern = re.compile(r'\{References: (\[\d+\]: [^}]+)\}')
     
     # List to store cleaned chart notes without citations
     notes = []
@@ -80,7 +81,6 @@ def parse_chart_notes_for_citations(chart_notes):
     st.write("Citations Dictionary:", citations_dict)
     
     return notes, citations_dict
-
 
 
 def highlight_citation(transcript, citation_text):
