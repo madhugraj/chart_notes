@@ -156,4 +156,12 @@ if uploaded_file:
                     citation_text = citations[0].split(": ")[1].strip('"')
                     st.write(f"Citation Text for Highlighting: {citation_text}")  # Debugging output
                     highlighted_transcript = highlight_citation(transcript, citation_text)
-                    st.write(f
+                    st.write(f"Highlighted Transcript Length: {len(highlighted_transcript)}")  # Debugging output
+                    transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
+
+        # Download button for chart notes
+        st.download_button("Download Chart Notes", data="\n".join(notes), file_name="chart_notes.txt", mime="text/plain")
+
+        # Download button for citations dictionary
+        citations_text = format_citations_dictionary(citations_dict)
+        st.download_button("Download Citations Dictionary", data=citations_text, file_name="citations_dictionary.txt", mime="text/plain")
