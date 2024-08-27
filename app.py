@@ -127,13 +127,15 @@ if uploaded_file:
         st.session_state.notes, st.session_state.citations_dict = parse_chart_notes_for_citations(chart_notes_with_citations)
         st.session_state.selected_note = st.session_state.notes[0] if st.session_state.notes else None
 
-# Only show this if a file has been uploaded and notes are generated
+# Ensure display only happens if a file has been uploaded and notes are generated
 if st.session_state.transcript and st.session_state.notes:
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("Transcript")
         transcript_area = st.empty()
+
+        # Ensure proper display of transcript based on selected note
         if st.session_state.selected_note:
             highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note)
             transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
@@ -144,8 +146,8 @@ if st.session_state.transcript and st.session_state.notes:
         st.subheader("Generated Chart Notes")
         st.text_area("Chart Notes", value="\n".join(st.session_state.notes), height=300, key="chart_notes")
 
-        # Select note to view citations
-        st.session_state.selected_note = st.selectbox("Select a note to see its citation:", st.session_state.notes)
+        # Select note to view citations and ensure state sync
+        st.session_state.selected_note = st.selectbox("Select a note to see its citation:", st.session_state.notes, index=st.session_state.notes.index(st.session_state.selected_note) if st.session_state.selected_note else 0)
 
         if st.session_state.selected_note in st.session_state.citations_dict:
             citations = st.session_state.citations_dict[st.session_state.selected_note]
@@ -153,7 +155,7 @@ if st.session_state.transcript and st.session_state.notes:
             for i, citation in enumerate(citations):
                 st.text_area(f"Citation {i+1}", value=citation, height=100, key=f"citation_{i}")
 
-# Download buttons
+# Display download buttons after notes are generated
 if st.session_state.notes:
     st.download_button("Download Chart Notes", data="\n".join(st.session_state.notes), file_name="chart_notes.txt", mime="text/plain")
 if st.session_state.citations_dict:
