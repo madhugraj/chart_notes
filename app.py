@@ -52,29 +52,36 @@ def parse_chart_notes_for_citations(chart_notes):
     next_citation_number = 1
 
     for line in chart_notes.splitlines():
+        # Find citations in the line
         citations = citation_pattern.findall(line)
         clean_sentence = citation_pattern.sub('', line).strip()
 
         if clean_sentence:
+            # Only add the sentence if it has citations
             if citations:
                 notes.append(clean_sentence)
         
         if citations:
+            # Extract individual citations
             citation_texts = citations[0].split(', ')
             for citation in citation_texts:
                 match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
                 if match:
                     citation_number, citation_text = match.groups()
                     
+                    # Check if this citation text has already been assigned a number
                     if citation_text not in all_citations:
                         all_citations[citation_text] = f"[{next_citation_number}]"
                         next_citation_number += 1
                     
+                    # Add the citation to the dictionary, associated with the clean sentence
                     if clean_sentence in citations_dict:
                         citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
                     else:
                         citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
 
+    # Ensure all citations are captured
+    st.write("Citations Dictionary:", citations_dict)  # Debugging output
     return notes, citations_dict
 
 def highlight_citations(transcript, citations_dict, selected_note):
