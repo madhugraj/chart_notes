@@ -40,20 +40,14 @@ def generate_chart_notes_with_citations(transcript, template):
     prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
     1. Number the references sequentially in the order they first appear in the text.
     2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
-    3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}.
-
-    For example:
-    1. Patient reports experiencing dizziness for the past week.
-    {{References: [1]: "The patient states that she has been experiencing dizziness for the past week.", [2]: "She was under sleeping pills."}}
-    2. Patient denies any history of smoking.
-    {{References: [3]: "The patient denies smoking.", [4]: "He was in rehab."}}"""
-
+    3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
+    
     response = model.generate_content([prompt])
     content_text = response.candidates[0].content.parts[0].text.strip()
     return content_text
 
 def parse_chart_notes_for_citations(chart_notes):
-    """Parse the chart notes to extract sentences and associated citations, ensuring correct sequential numbering."""
+    """Parse the chart notes to extract sentences and associated citations."""
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
@@ -69,19 +63,16 @@ def parse_chart_notes_for_citations(chart_notes):
                 notes.append(clean_sentence)
         
         if citations:
-            # Extract individual citations
             citation_texts = citations[0].split(', ')
             for citation in citation_texts:
                 match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
                 if match:
                     citation_number, citation_text = match.groups()
                     
-                    # Check if this citation text has already been assigned a number
                     if citation_text not in all_citations:
                         all_citations[citation_text] = f"[{next_citation_number}]"
                         next_citation_number += 1
                     
-                    # Add the citation to the dictionary, associated with the clean sentence
                     if clean_sentence in citations_dict:
                         citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
                     else:
@@ -95,12 +86,7 @@ def highlight_citations(transcript, citations_dict, selected_note):
         citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text)
-            transcript = re.sub(
-                citation_text_escaped, 
-                f"<mark style='background-color: yellow'>{citation_text}</mark>", 
-                transcript, 
-                flags=re.IGNORECASE
-            )
+            transcript = re.sub(citation_text_escaped, f"<mark style='background-color: yellow'>{citation_text}</mark>", transcript, flags=re.IGNORECASE)
     return transcript
 
 def format_citations_dictionary(citations_dict):
@@ -116,18 +102,6 @@ def format_citations_dictionary(citations_dict):
 # Streamlit app interface
 st.title("Chart Notes Generator with Dynamic Citations")
 
-# Initialize session state
-if "transcript" not in st.session_state:
-    st.session_state.transcript = ""
-if "chart_notes" not in st.session_state:
-    st.session_state.chart_notes = ""
-if "notes" not in st.session_state:
-    st.session_state.notes = []
-if "citations_dict" not in st.session_state:
-    st.session_state.citations_dict = {}
-if "selected_note" not in st.session_state:
-    st.session_state.selected_note = None
-
 # Upload file
 uploaded_file = st.file_uploader("Upload a JSON or TXT file containing the transcript", type=["json", "txt"])
 
@@ -136,45 +110,39 @@ if uploaded_file:
     template = st.text_area("Paste your template here:")
 
     if uploaded_file.type == "application/json":
-        # Process JSON file
-        st.session_state.transcript = extract_transcript_from_json(uploaded_file)
+        transcript = extract_transcript_from_json(uploaded_file)
+        st.write("Transcript extracted from JSON:")
     elif uploaded_file.type == "text/plain":
-        # Process TXT file
-        st.session_state.transcript = uploaded_file.read().decode("utf-8")
-    
-    # Generate chart notes with citations
+        transcript = uploaded_file.read().decode("utf-8")
+        st.write("Transcript from TXT file:")
+
     if st.button("Generate Chart Notes"):
-        st.session_state.chart_notes = generate_chart_notes_with_citations(st.session_state.transcript, template)
+        chart_notes_with_citations = generate_chart_notes_with_citations(transcript, template)
+        notes, citations_dict = parse_chart_notes_for_citations(chart_notes_with_citations)
+
+        # Side-by-side layout
+        col1, col2 = st.columns(2)
         
-        # Parse the chart notes to get notes without citations and the citation dictionary
-        st.session_state.notes, st.session_state.citations_dict = parse_chart_notes_for_citations(st.session_state.chart_notes)
+        with col1:
+            st.subheader("Transcript")
+            transcript_area = st.empty()
+            transcript_area.markdown(transcript, unsafe_allow_html=True, key="transcript_display")
 
-# Side-by-side layout
-col1, col2 = st.columns(2)
+        with col2:
+            st.subheader("Generated Chart Notes")
+            st.text_area("Chart Notes", value="\n".join(notes), height=300, key="chart_notes_display")
+            
+            selected_note = st.selectbox("Select a note to see its citation:", notes, key="select_note")
 
-with col1:
-    st.subheader("Transcript")
-    transcript_area = st.empty()
-    transcript_area.markdown(st.session_state.transcript, unsafe_allow_html=True)
+            if selected_note in citations_dict:
+                citations = citations_dict[selected_note]
+                st.write("Citations:")
+                for citation in citations:
+                    st.text_area("Citation", value=citation, height=100, key=f"citation_display_{citation}")
 
-with col2:
-    st.subheader("Generated Chart Notes")
-    if st.session_state.notes:
-        st.session_state.selected_note = st.selectbox("Select a note to see its citation:", st.session_state.notes, key='note_selector')
+                highlighted_transcript = highlight_citations(transcript, citations_dict, selected_note)
+                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True, key="highlighted_transcript_display")
 
-        if st.session_state.selected_note in st.session_state.citations_dict:
-            citations = st.session_state.citations_dict[st.session_state.selected_note]
-            st.write("Citations:")
-            for citation in citations:
-                st.text_area("Citation", value=citation, height=100)
-
-            # Highlight and display the transcript with the selected citation highlighted
-            highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note)
-            transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
-
-    # Download button for chart notes
-    st.download_button("Download Chart Notes", data="\n".join(st.session_state.notes), file_name="chart_notes.txt", mime="text/plain")
-
-    # Download button for citations dictionary
-    citations_text = format_citations_dictionary(st.session_state.citations_dict)
-    st.download_button("Download Citations Dictionary", data=citations_text, file_name="citations_dictionary.txt", mime="text/plain")
+        st.download_button("Download Chart Notes", data="\n".join(notes), file_name="chart_notes.txt", mime="text/plain")
+        citations_text = format_citations_dictionary(citations_dict)
+        st.download_button("Download Citations Dictionary", data=citations_text, file_name="citations_dictionary.txt", mime="text/plain")
