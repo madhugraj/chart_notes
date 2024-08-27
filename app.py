@@ -102,6 +102,14 @@ def format_citations_dictionary(citations_dict):
 # Streamlit app interface
 st.title("Chart Notes Generator with Dynamic Citations")
 
+# Initialize session state variables
+if "citations_dict" not in st.session_state:
+    st.session_state.citations_dict = {}
+if "selected_note" not in st.session_state:
+    st.session_state.selected_note = None
+if "transcript" not in st.session_state:
+    st.session_state.transcript = ""
+
 # Upload file
 uploaded_file = st.file_uploader("Upload a JSON or TXT file containing the transcript", type=["json", "txt"])
 
@@ -111,14 +119,19 @@ if uploaded_file:
 
     if uploaded_file.type == "application/json":
         transcript = extract_transcript_from_json(uploaded_file)
+        st.session_state.transcript = transcript
         st.write("Transcript extracted from JSON:")
     elif uploaded_file.type == "text/plain":
         transcript = uploaded_file.read().decode("utf-8")
+        st.session_state.transcript = transcript
         st.write("Transcript from TXT file:")
 
     if st.button("Generate Chart Notes"):
-        chart_notes_with_citations = generate_chart_notes_with_citations(transcript, template)
+        chart_notes_with_citations = generate_chart_notes_with_citations(st.session_state.transcript, template)
         notes, citations_dict = parse_chart_notes_for_citations(chart_notes_with_citations)
+        
+        # Save to session state
+        st.session_state.citations_dict = citations_dict
 
         # Side-by-side layout
         col1, col2 = st.columns(2)
@@ -126,23 +139,24 @@ if uploaded_file:
         with col1:
             st.subheader("Transcript")
             transcript_area = st.empty()
-            transcript_area.markdown(transcript, unsafe_allow_html=True, key="transcript_display")
+            transcript_area.markdown(st.session_state.transcript, unsafe_allow_html=True)
 
         with col2:
             st.subheader("Generated Chart Notes")
-            st.text_area("Chart Notes", value="\n".join(notes), height=300, key="chart_notes_display")
+            st.text_area("Chart Notes", value="\n".join(notes), height=300)
             
-            selected_note = st.selectbox("Select a note to see its citation:", notes, key="select_note")
+            selected_note = st.selectbox("Select a note to see its citation:", notes)
+            st.session_state.selected_note = selected_note
 
-            if selected_note in citations_dict:
-                citations = citations_dict[selected_note]
+            if st.session_state.selected_note in st.session_state.citations_dict:
+                citations = st.session_state.citations_dict[st.session_state.selected_note]
                 st.write("Citations:")
                 for citation in citations:
                     st.text_area("Citation", value=citation, height=100, key=f"citation_display_{citation}")
 
-                highlighted_transcript = highlight_citations(transcript, citations_dict, selected_note)
-                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True, key="highlighted_transcript_display")
+                highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note)
+                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
 
         st.download_button("Download Chart Notes", data="\n".join(notes), file_name="chart_notes.txt", mime="text/plain")
-        citations_text = format_citations_dictionary(citations_dict)
+        citations_text = format_citations_dictionary(st.session_state.citations_dict)
         st.download_button("Download Citations Dictionary", data=citations_text, file_name="citations_dictionary.txt", mime="text/plain")
