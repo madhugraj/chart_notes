@@ -88,11 +88,15 @@ def parse_chart_notes_for_citations(chart_notes):
 
     return notes, citations_dict
 
-def highlight_citation(transcript, citation_text):
-    """Highlight the part of the transcript matching the citation."""
-    citation_text_escaped = re.escape(citation_text)
-    highlighted = re.sub(citation_text_escaped, f"<mark style='background-color: yellow'>{citation_text}</mark>", transcript, flags=re.IGNORECASE)
-    return highlighted
+def highlight_citations(transcript, citations_dict, selected_note):
+    """Highlight all citations in the transcript based on the selected note."""
+    if selected_note in citations_dict:
+        # Collect all citation texts for the selected note
+        citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
+        for citation_text in citation_texts:
+            citation_text_escaped = re.escape(citation_text)
+            transcript = re.sub(citation_text_escaped, f"<mark style='background-color: yellow'>{citation_text}</mark>", transcript, flags=re.IGNORECASE)
+    return transcript
 
 def format_citations_dictionary(citations_dict):
     """Format citations dictionary as a string for download."""
@@ -152,12 +156,8 @@ if uploaded_file:
                     st.text_area("Citation", value=citation, height=100)
 
                 # Highlight and display the transcript with the selected citation highlighted
-                if citations:
-                    citation_text = citations[0].split(": ")[1].strip('"')
-                    st.write(f"Citation Text for Highlighting: {citation_text}")  # Debugging output
-                    highlighted_transcript = highlight_citation(transcript, citation_text)
-                    st.write(f"Highlighted Transcript Length: {len(highlighted_transcript)}")  # Debugging output
-                    transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
+                highlighted_transcript = highlight_citations(transcript, citations_dict, selected_note)
+                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
 
         # Download button for chart notes
         st.download_button("Download Chart Notes", data="\n".join(notes), file_name="chart_notes.txt", mime="text/plain")
