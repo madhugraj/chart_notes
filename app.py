@@ -96,7 +96,6 @@ def highlight_citations(transcript, citations_dict, selected_note):
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text)
             transcript = re.sub(citation_text_escaped, f"<mark style='background-color: yellow'>{citation_text}</mark>", transcript, flags=re.IGNORECASE)
-    st.write(transcript)
     return transcript
 
 def format_citations_dictionary(citations_dict):
@@ -141,7 +140,7 @@ if uploaded_file:
         with col1:
             st.subheader("Transcript")
             transcript_area = st.empty()
-            transcript_area.markdown("Transcript", unsafe_allow_html=True)
+            transcript_area.markdown(transcript, unsafe_allow_html=True)
 
         with col2:
             st.subheader("Generated Chart Notes")
