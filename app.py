@@ -40,9 +40,14 @@ def generate_chart_notes_with_citations(transcript, template):
     prompt = f"""Create chart notes as per the {template} for the {transcript}. And from the following health care transcript: {transcript}
                 Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. For example, here's how to include citations:
                 1. Patient reports experiencing dizziness for the past week.
-                {References: CITATION[1]: The patient states that she has been experiencing dizziness for the past week., CITATION[2]: She was under sleeping pills}
+                {{References: CITATION[1]: The patient states that she has been experiencing dizziness for the past week., CITATION[2]: She was under sleeping pills}}
                 2. Patient denies any history of smoking. 
-                {References: CITATION[3]: The patient denies smoking, CITATION[4]: He was in rehab..} """
+                {{References: CITATION[3]: The patient denies smoking, CITATION[4]: He was in rehab..}} """
+    
+    response = model.generate_content([prompt])
+    content_text = response.candidates[0].content.parts[0].text.strip()
+    return content_text
+
     
     response = model.generate_content([prompt])
     content_text = response.candidates[0].content.parts[0].text.strip()
