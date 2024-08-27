@@ -125,6 +125,8 @@ if "notes" not in st.session_state:
     st.session_state.notes = []
 if "citations_dict" not in st.session_state:
     st.session_state.citations_dict = {}
+if "selected_note" not in st.session_state:
+    st.session_state.selected_note = None
 
 # Upload file
 uploaded_file = st.file_uploader("Upload a JSON or TXT file containing the transcript", type=["json", "txt"])
@@ -147,34 +149,32 @@ if uploaded_file:
         # Parse the chart notes to get notes without citations and the citation dictionary
         st.session_state.notes, st.session_state.citations_dict = parse_chart_notes_for_citations(st.session_state.chart_notes)
 
-        # Side-by-side layout
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Transcript")
-            transcript_area = st.empty()
-            transcript_area.markdown(st.session_state.transcript, unsafe_allow_html=True)
+# Side-by-side layout
+col1, col2 = st.columns(2)
 
-        with col2:
-            st.subheader("Generated Chart Notes")
-            st.text_area("Chart Notes", value="\n".join(st.session_state.notes), height=300)
-            
-            # Select note to view citations
-            selected_note = st.selectbox("Select a note to see its citation:", st.session_state.notes)
+with col1:
+    st.subheader("Transcript")
+    transcript_area = st.empty()
+    transcript_area.markdown(st.session_state.transcript, unsafe_allow_html=True)
+
+with col2:
+    st.subheader("Generated Chart Notes")
+    if st.session_state.notes:
+        st.session_state.selected_note = st.selectbox("Select a note to see its citation:", st.session_state.notes, key='note_selector')
+
+        if st.session_state.selected_note in st.session_state.citations_dict:
+            citations = st.session_state.citations_dict[st.session_state.selected_note]
+            st.write("Citations:")
+            for citation in citations:
+                st.text_area("Citation", value=citation, height=100)
 
             # Highlight and display the transcript with the selected citation highlighted
-            highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
+            highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note)
             transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
 
-            if selected_note in st.session_state.citations_dict:
-                citations = st.session_state.citations_dict[selected_note]
-                st.write("Citations:")
-                for citation in citations:
-                    st.text_area("Citation", value=citation, height=100)
+    # Download button for chart notes
+    st.download_button("Download Chart Notes", data="\n".join(st.session_state.notes), file_name="chart_notes.txt", mime="text/plain")
 
-        # Download button for chart notes
-        st.download_button("Download Chart Notes", data="\n".join(st.session_state.notes), file_name="chart_notes.txt", mime="text/plain")
-
-        # Download button for citations dictionary
-        citations_text = format_citations_dictionary(st.session_state.citations_dict)
-        st.download_button("Download Citations Dictionary", data=citations_text, file_name="citations_dictionary.txt", mime="text/plain")
+    # Download button for citations dictionary
+    citations_text = format_citations_dictionary(st.session_state.citations_dict)
+    st.download_button("Download Citations Dictionary", data=citations_text, file_name="citations_dictionary.txt", mime="text/plain")
