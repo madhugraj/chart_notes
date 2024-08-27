@@ -152,7 +152,7 @@ if uploaded_file:
             # Select note to view citations
             selected_note = st.selectbox("Select a note to see its citation:", notes)
 
-            # Update the transcript with highlights based on the selected note
+            # Highlight and display the transcript with the selected citation highlighted
             highlighted_transcript = highlight_citations(transcript, citations_dict, selected_note)
             transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
 
