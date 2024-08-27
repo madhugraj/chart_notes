@@ -73,29 +73,35 @@ def generate_chart_notes_with_citations(transcript, template):
     return content_text
 
 
+import re
+import streamlit as st
+
 def parse_chart_notes_for_citations(chart_notes):
     """Parse the chart notes to extract sentences and associated citations."""
-    # Regex pattern to match and capture citations in the new format
-    citation_pattern = re.compile(r'\{References:\s*(\[\d+\]:[^}]+)\}')
+    # Regex pattern to match and capture citations in the format [x]: "citation text".
+    citation_pattern = re.compile(r'\[References: ([^}]+)\]')
     
     # List to store cleaned chart notes without citations
     notes = []
     # Dictionary to store citations with corresponding cleaned notes
     citations_dict = {}
-    
+
     for line in chart_notes.splitlines():
-        # Extract the citations and clean the note by removing them
+        # Extract the citations
         citations = citation_pattern.findall(line)
+        # Remove citation text from the line
         clean_sentence = citation_pattern.sub('', line).strip()
         
         if clean_sentence:  # Only add non-empty sentences
             notes.append(clean_sentence)
         
         if citations:
-            citations_dict[clean_sentence] = citations
+            # Split the citations into individual components
+            citation_list = citations[0].split(', ')
+            citations_dict[clean_sentence] = citation_list
     
     # Debugging output to verify the cleaned notes and citations
-    st.write("Cleaned Notes:", notes)
+    #st.write("Cleaned Notes:", notes)
     st.write("Citations Dictionary:", citations_dict)
     
     return notes, citations_dict
