@@ -195,8 +195,12 @@ def parse_chart_notes_for_citations(response):
     notes = []
     citations_dict = {}
 
-    # Extract content text from the response
-    content_text = response.candidates[0].content.strip()  # Adjust to proper format
+    # Check if response has the right structure
+    if hasattr(response.candidates[0], 'text'):
+        content_text = response.candidates[0].text.strip()  # Assuming `text` contains the note content
+    else:
+        st.error("The response structure is not as expected. 'text' field missing.")
+        return notes, citations_dict
 
     lines = content_text.splitlines()  # Split by lines
 
