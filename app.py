@@ -48,9 +48,9 @@ st.markdown(
 # Display heading with color bar
 st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
-# Template definitions (assuming they are provided)
 
-template_1 = """
+# Template definitions
+template_1 = """ 
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -101,6 +101,7 @@ The physician personally evaluated the patient and reviewed the history, physica
 
 **Scribe Acknowledgment:**  
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
+
 """
 template_2 = """Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
@@ -275,7 +276,10 @@ def extract_transcript_from_json(json_file):
 
 def generate_chart_notes_with_citations(transcript, template):
     """Generate chart notes with citations using the model."""
-    prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
+    prompt = f"""Create chart notes as per the {template} for the {transcript}. 
+    Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript.
+    Give only the legitimate citation and avoid filler words and words like yes, okay, yeah as citations. 
+    The citations must follow these rules:
     1. Number the references sequentially in the order they first appear in the text.
     2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
     3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
@@ -289,30 +293,26 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the raw response to extract sentences and associated citations."""
-    citation_pattern = re.compile(r'\{References: ([^\}]+)\}')
-    heading_pattern = re.compile(r'\*\*([^\*]+)\*\*')  # Pattern for headings
-    notes_dict = {}
+    citation_pattern = re.compile(r'\{References: ([^}]+)\}')
+    notes = []
+    citations_dict = {}
     all_citations = {}
     next_citation_number = 1
 
     # Extract content text from the response
     content_text = response.candidates[0].content.parts[0].text.strip()
 
-    # Split content into sections based on headings
-    sections = re.split(heading_pattern, content_text)
-    headings = [heading.strip() for heading in heading_pattern.findall(content_text)]
+    lines = content_text.splitlines()
+    for line in lines:
+        citations = citation_pattern.findall(line)
+        clean_sentence = citation_pattern.sub('', line).strip()
 
-    for i, section in enumerate(sections[1:]):  # Skip the first split as it's empty before the first heading
-        heading = headings[i]
-        section_text = section.strip()
+        if clean_sentence:
+            if citations:  # Only add notes with citations
+                notes.append(clean_sentence)
         
-        # Extract citations
-        citations_match = citation_pattern.search(section_text)
-        if citations_match:
-            citations_text = citations_match.group(1).strip()
-            citation_texts = citations_text.split(', ')
-            
-            citations = []
+        if citations:
+            citation_texts = citations[0].split(', ')
             for citation in citation_texts:
                 match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
                 if match:
@@ -322,20 +322,12 @@ def parse_chart_notes_for_citations(response):
                         all_citations[citation_text] = f"[{next_citation_number}]"
                         next_citation_number += 1
                     
-                    citations.append(f'{all_citations[citation_text]}: "{citation_text}"')
-            
-            # Remove citation part from the section text
-            note_part = citation_pattern.sub('', section_text).strip()
-            
-            if note_part:
-                notes_dict[heading] = {
-                    'Note': note_part,
-                    'Citations': citations
-                }
+                    if clean_sentence in citations_dict:
+                        citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
+                    else:
+                        citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
 
-    return notes_dict
-
-
+    return notes, citations_dict
 
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
@@ -356,8 +348,6 @@ def highlight_citations(transcript, citations_dict, selected_note):
             )
     
     return highlighted_transcript
-
-
 
 # Template selection
 
@@ -384,7 +374,7 @@ with st.expander("View Selected Template", expanded=False):
     st.text(st.session_state.selected_template)
 
 # Upload file
-uploaded_file = st.file_uploader("Upload a JSON or TXT file containing the transcript", type=["json", "txt"])
+uploaded_file = st.file_uploader("Upload a TXT file containing the transcript", type=["json", "txt"])
 
 if uploaded_file:
     if uploaded_file.type == "application/json":
