@@ -302,39 +302,22 @@ def parse_chart_notes_for_citations(response):
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
-    all_citations = {}
-    next_citation_number = 1
-    
 
     # Extract content text from the response
-    content_text = response.candidates[0].content.parts[0].text.strip()
-    
+    content_text = response.candidates[0].content.strip()
 
-    lines = content_text.splitlines()
+    lines = content_text.splitlines()  # Split by lines, assuming each line has either a note or a citation
+
     for line in lines:
-        citations = citation_pattern.findall(line)
-        clean_sentence = citation_pattern.sub('', line).strip()
-
-        if clean_sentence:
-            if citations:  # Only add notes with citations
-                notes.append(clean_sentence)
-        st.write(citations)
+        citations = citation_pattern.findall(line)  # Find any citations in the line
+        clean_sentence = citation_pattern.sub('', line).strip()  # Remove citation text from the sentence
+        
+        if clean_sentence:  # Only add non-empty sentences
+            notes.append(clean_sentence)
+        
         if citations:
             citation_texts = citations[0].split(', ')
-            for citation in citation_texts:
-                match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
-                if match:
-                    citation_number, citation_text = match.groups()
-                    
-                    if citation_text not in all_citations:
-                        all_citations[citation_text] = f"[{next_citation_number}]"
-                        next_citation_number += 1
-                    
-                    if clean_sentence in citations_dict:
-                        citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
-                    else:
-                        citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
-            #st.write(citations_dict)
+            citations_dict[clean_sentence] = citation_texts
 
     return notes, citations_dict
 
