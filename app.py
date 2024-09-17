@@ -103,7 +103,7 @@ The physician personally evaluated the patient and reviewed the history, physica
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
 
 """
-template_2 = """Historian-
+template_2 = """ Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
 
 CHIEF COMPLAINT- 
@@ -284,8 +284,8 @@ def generate_chart_notes_with_citations(transcript, template):
 
     try:
         response = model.generate_content([prompt])
-        content_text = response.strip()  # Directly use the response as plain text
-        if not content_text:
+        content_text = response.candidates[0].content.parts[0].text.strip()
+        if not response or not response.candidates:
             st.warning("No response from the model. Please check the template or try again.")
             return None
         st.write(content_text)
@@ -296,29 +296,34 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the raw response to extract sentences and associated citations."""
-    citation_pattern = re.compile(r'\{References: ([^\}]+)\}')
+    citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
 
     try:
-        # Use the response directly as plain text
-        content_text = response.strip()
+        # Assuming the response is a dict-like object with candidates
+        content_text = response.candidates[0].content.strip()  # Adjust based on actual field in API response
 
-        # Find all citations
-        citations_matches = citation_pattern.findall(content_text)
-        citations = {i + 1: citation for i, citation in enumerate(citations_matches)}
-
-        # Remove citation markers from the text and collect sentences
-        cleaned_text = citation_pattern.sub('', content_text).strip()
-        sentences = re.split(r'(?<=[.!?]) +', cleaned_text)
-
-        for sentence in sentences:
-            # Find citations for the sentence
-            citation_numbers = [i + 1 for i, citation in citations.items() if citation in sentence]
-            if citation_numbers:
-                notes.append(sentence.strip())
-                citations_dict[sentence.strip()] = [f"[{num}]: {citations[num]}" for num in citation_numbers]
-
+        # Extract citations
+        citations_raw = citation_pattern.findall(content_text)
+        
+        # Extract notes and their citations
+        for citation in citations_raw:
+            note_part = citation.split(': ', 1)
+            if len(note_part) == 2:
+                citation_number = note_part[0].strip('[]')
+                citation_text = note_part[1].strip('"')
+                
+                # Find the note in the text and map it to the citation
+                note_match = re.search(rf'(.+?)(?:\{{References: \[{citation_number}\]: "{citation_text}"\}})', content_text)
+                if note_match:
+                    note_text = note_match.group(1).strip()
+                    if note_text not in notes:
+                        notes.append(note_text)
+                    if note_text not in citations_dict:
+                        citations_dict[note_text] = []
+                    citations_dict[note_text].append(citation_text)
+                    
     except AttributeError as e:
         st.error(f"An error occurred while parsing the response: {str(e)}")
         return notes, citations_dict
@@ -329,11 +334,13 @@ def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
     highlighted_transcript = transcript
     
+    # Check if the selected note has associated citations
     if selected_note in citations_dict:
-        citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
+        citation_texts = citations_dict[selected_note]
         
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text)
+            # Ensure highlighting is done in a case-insensitive manner
             highlighted_transcript = re.sub(
                 citation_text_escaped,
                 f"<mark style='background-color: yellow'>{citation_text}</mark>",
@@ -379,7 +386,6 @@ if uploaded_file:
 
     if st.button("Generate Chart Notes"):
         response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
-        st.write(response)
         if response:
             notes, citations_dict = parse_chart_notes_for_citations(response)
             
@@ -413,8 +419,8 @@ if uploaded_file:
                 transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
             
             # Download buttons
-            chart_notes_file = "Chart_Notes.txt"
-            citations_file = "Citations.txt"
+            chart_notes_file = f"Chart_Notes.txt"
+            citations_file = f"Citations.txt"
             
             st.download_button(
                 label="Download Chart Notes",
