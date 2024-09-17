@@ -284,25 +284,26 @@ def generate_chart_notes_with_citations(transcript, template):
 
     try:
         response = model.generate_content([prompt])
-        content_text = response.candidates[0].content.parts[0].text.strip()
-        if not response or not response.candidates:
+        content_text = response.candidates[0].content.parts[0].text.strip() if hasattr(response, 'candidates') else response.strip()
+        if not response or (hasattr(response, 'candidates') and not response.candidates):
             st.warning("No response from the model. Please check the template or try again.")
             return None
-        st.write(content_text)
+        #st.write(content_text)
         return content_text
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
 
+
 def parse_chart_notes_for_citations(response):
     """Parse the raw response to extract sentences and associated citations."""
+    st.write(response)
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
 
     try:
-        # Assuming the response is a dict-like object with candidates
-        content_text = response.candidates[0].content.strip()  # Adjust based on actual field in API response
+        content_text = response.strip()  # Directly use the string response
 
         # Extract citations
         citations_raw = citation_pattern.findall(content_text)
