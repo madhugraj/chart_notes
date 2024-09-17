@@ -289,25 +289,30 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the raw response to extract sentences and associated citations."""
-    citation_pattern = re.compile(r'\{References: ([^}]+)\}')
-    notes = []
-    citations_dict = {}
+    citation_pattern = re.compile(r'\{References: ([^\}]+)\}')
+    heading_pattern = re.compile(r'\*\*([^\*]+)\*\*')  # Pattern for headings
+    notes_dict = {}
     all_citations = {}
     next_citation_number = 1
 
     # Extract content text from the response
     content_text = response.candidates[0].content.parts[0].text.strip()
 
-    for line in content_text.splitlines():
-        citations = citation_pattern.findall(line)
-        clean_sentence = citation_pattern.sub('', line).strip()
+    # Split content into sections based on headings
+    sections = re.split(heading_pattern, content_text)
+    headings = [heading.strip() for heading in heading_pattern.findall(content_text)]
 
-        if clean_sentence:
-            if citations:  # Only add notes with citations
-                notes.append(clean_sentence)
+    for i, section in enumerate(sections[1:]):  # Skip the first split as it's empty before the first heading
+        heading = headings[i]
+        section_text = section.strip()
         
-        if citations:
-            citation_texts = citations[0].split(', ')
+        # Extract citations
+        citations_match = citation_pattern.search(section_text)
+        if citations_match:
+            citations_text = citations_match.group(1).strip()
+            citation_texts = citations_text.split(', ')
+            
+            citations = []
             for citation in citation_texts:
                 match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
                 if match:
@@ -317,12 +322,19 @@ def parse_chart_notes_for_citations(response):
                         all_citations[citation_text] = f"[{next_citation_number}]"
                         next_citation_number += 1
                     
-                    if clean_sentence in citations_dict:
-                        citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
-                    else:
-                        citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
+                    citations.append(f'{all_citations[citation_text]}: "{citation_text}"')
+            
+            # Remove citation part from the section text
+            note_part = citation_pattern.sub('', section_text).strip()
+            
+            if note_part:
+                notes_dict[heading] = {
+                    'Note': note_part,
+                    'Citations': citations
+                }
 
-    return notes, citations_dict
+    return notes_dict
+
 
 
 def highlight_citations(transcript, citations_dict, selected_note):
