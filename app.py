@@ -297,39 +297,43 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the raw response to extract sentences and associated citations."""
-    #st.write(response)
-    citation_pattern = re.compile(r'\{References: ([^}]+)\}')
+    citation_pattern = re.compile(r'\{References: \[([^\]]+)\]\}')
     notes = []
     citations_dict = {}
 
     try:
-        content_text = response.strip()  # Directly use the string response
+        content_text = response.strip()  # Use the string response directly
 
-        # Extract citations
+        # Extract all citation references
         citations_raw = citation_pattern.findall(content_text)
         
         # Extract notes and their citations
-        for citation in citations_raw:
-            note_part = citation.split(': ', 1)
-            if len(note_part) == 2:
-                citation_number = note_part[0].strip('[]')
-                citation_text = note_part[1].strip('"')
+        for citation_block in citations_raw:
+            # Split citations by ', '
+            citation_entries = citation_block.split(', ')
+            # Iterate over each citation entry
+            for entry in citation_entries:
+                citation_number, citation_text = entry.split(': ', 1)
+                citation_number = citation_number.strip('[]')
+                citation_text = citation_text.strip('"')
                 
-                # Find the note in the text and map it to the citation
-                note_match = re.search(rf'(.+?)(?:\{{References: \[{citation_number}\]: "{citation_text}"\}})', content_text)
+                # Extract the note before the citation block
+                note_pattern = re.compile(rf'(.+?)(?=\{{References: \[{citation_number}\]: "{citation_text}"\}})')
+                note_match = note_pattern.search(content_text)
+                
                 if note_match:
                     note_text = note_match.group(1).strip()
-                    if note_text not in notes:
+                    if note_text and note_text not in notes:
                         notes.append(note_text)
-                    if note_text not in citations_dict:
-                        citations_dict[note_text] = []
-                    citations_dict[note_text].append(citation_text)
-                    
+                    if note_text:
+                        if note_text not in citations_dict:
+                            citations_dict[note_text] = []
+                        citations_dict[note_text].append(citation_text)
+
     except AttributeError as e:
         st.error(f"An error occurred while parsing the response: {str(e)}")
         return notes, citations_dict
-    #st.write(notes)
-    st.write(citations_dict)
+    st.write("Citations Dictionary:", st.session_state.citations_dict)
 
     return notes, citations_dict
 
