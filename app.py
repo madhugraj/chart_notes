@@ -169,15 +169,10 @@ def extract_transcript_from_json(json_file):
 
 def generate_chart_notes_with_citations(transcript, template):
     """Generate chart notes with citations using the model."""
-    prompt = f"""Create chart notes as per the template: {template} based on this transcript:
-    {transcript}
-    The chart notes must include citations for specific information extracted from the transcript. 
-    Ensure the citations follow these rules:
-    1. Number the references sequentially in the order they first appear.
+    prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
+    1. Number the references sequentially in the order they first appear in the text.
     2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
-    3. Avoid filler words like 'yes', 'okay', 'yeah'. 
-    4. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}.
-    """
+    3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
 
     try:
         response = model.generate_content([prompt])
