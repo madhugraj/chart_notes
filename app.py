@@ -306,7 +306,7 @@ def parse_chart_notes_for_citations(response):
 
         # Extract all citation references
         citations_raw = citation_pattern.findall(content_text)
-        
+        st.write("Citations Dictionary:", st.session_state.citations_raw)
         # Extract notes and their citations
         for citation_block in citations_raw:
             # Split citations by ', '
@@ -333,7 +333,7 @@ def parse_chart_notes_for_citations(response):
     except AttributeError as e:
         st.error(f"An error occurred while parsing the response: {str(e)}")
         return notes, citations_dict
-    st.write("Citations Dictionary:", st.session_state.citations_dict)
+    #st.write("Citations Dictionary:", st.session_state.citations_dict)
 
     return notes, citations_dict
 
