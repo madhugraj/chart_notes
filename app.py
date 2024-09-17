@@ -318,7 +318,7 @@ def parse_chart_notes_for_citations(response):
         if clean_sentence:
             if citations:  # Only add notes with citations
                 notes.append(clean_sentence)
-        st.write(clean_sentence)
+        st.write(citations)
         if citations:
             citation_texts = citations[0].split(', ')
             for citation in citation_texts:
