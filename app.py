@@ -3,9 +3,54 @@ import json
 import re
 import google.generativeai as genai
 
-# Define templates before using them
-template_1 = """
+# Retrieve the API key from secrets
+api_key = st.secrets["api_key"]
+genai.configure(api_key=api_key)
 
+generation_config = {
+    "temperature": 0,
+    "top_p": 1.0,
+    "top_k": 34,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+)
+
+# Custom CSS for background color and other styles
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #013220;  /* Dark forest green background */
+    }
+    .heading {
+        font-size: 40px;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .color-bar {
+        width: 100%;
+        height: 5px;
+        background-color: gold;  /* Gold color bar */
+        margin-bottom: 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Display heading with color bar
+st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
+st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
+# Template definitions (assuming they are provided)
+
+template_1 = """
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -56,11 +101,8 @@ The physician personally evaluated the patient and reviewed the history, physica
 
 **Scribe Acknowledgment:**  
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
-
 """
-
-template_2 = """
-Historian-
+template_2 = """Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
 
 CHIEF COMPLAINT- 
@@ -217,54 +259,7 @@ Lab orders / investigation
 Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
-Follow up
-"""
-
-# Retrieve the API key from secrets
-api_key = st.secrets["api_key"]
-genai.configure(api_key=api_key)
-
-generation_config = {
-    "temperature": 0,
-    "top_p": 1.0,
-    "top_k": 34,
-    "max_output_tokens": 8192,
-    "response_mime_type": "text/plain",
-}
-
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    generation_config=generation_config,
-)
-
-# Custom CSS for background color and other styles
-st.markdown(
-    """
-    <style>
-    body {
-        background-color: #013220;  /* Dark forest green background */
-    }
-    .heading {
-        font-size: 40px;
-        color: white;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 10px;
-    }
-    .color-bar {
-        width: 100%;
-        height: 5px;
-        background-color: gold;  /* Gold color bar */
-        margin-bottom: 20px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# Display heading with color bar
-st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
-st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
+Follow up"""
 
 def extract_transcript_from_json(json_file):
     """Extract recognizedText from the JSON file."""
@@ -285,6 +280,7 @@ def generate_chart_notes_with_citations(transcript, template):
     2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
     3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
 
+
     try:
         response = model.generate_content([prompt])
         content_text = response.candidates[0].content.parts[0].text.strip()
@@ -298,32 +294,27 @@ def parse_chart_notes_for_citations(chart_notes):
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
-    all_citations = {}
-    next_citation_number = 1
-
-    for line in chart_notes.splitlines():
+    
+    lines = chart_notes.splitlines()
+    
+    for line in lines:
         citations = citation_pattern.findall(line)
         clean_sentence = citation_pattern.sub('', line).strip()
-
+        
         if clean_sentence:
             if citations:  # Only add notes with citations
                 notes.append(clean_sentence)
-        
-        if citations:
-            citation_texts = citations[0].split(', ')
-            for citation in citation_texts:
-                match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
-                if match:
-                    citation_number, citation_text = match.groups()
-                    
-                    if citation_text not in all_citations:
-                        all_citations[citation_text] = f"[{next_citation_number}]"
-                        next_citation_number += 1
-                    
-                    if clean_sentence in citations_dict:
-                        citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
-                    else:
-                        citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
+            
+            if citations:
+                citation_texts = citations[0].split(', ')
+                citation_entries = []
+                for citation in citation_texts:
+                    match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
+                    if match:
+                        citation_number, citation_text = match.groups()
+                        citation_entries.append(f'[{citation_number}]: "{citation_text}"')
+                
+                citations_dict[clean_sentence] = citation_entries
 
     return notes, citations_dict
 
@@ -346,6 +337,10 @@ def highlight_citations(transcript, citations_dict, selected_note):
             )
     
     return highlighted_transcript
+
+
+
+# Template selection
 
 # Initialize session state variables
 if "transcript" not in st.session_state:
