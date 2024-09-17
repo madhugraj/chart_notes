@@ -50,7 +50,7 @@ st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=Tr
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
 # Template definitions
-template_1 = """ 
+template_1 = """
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -101,7 +101,6 @@ The physician personally evaluated the patient and reviewed the history, physica
 
 **Scribe Acknowledgment:**  
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
-
 """
 template_2 = """Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
@@ -260,7 +259,8 @@ Lab orders / investigation
 Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
-Follow up"""
+Follow up
+"""
 
 def extract_transcript_from_json(json_file):
     """Extract recognizedText from the JSON file."""
@@ -276,20 +276,26 @@ def extract_transcript_from_json(json_file):
 
 def generate_chart_notes_with_citations(transcript, template):
     """Generate chart notes with citations using the model."""
-    prompt = f"""Create chart notes as per the {template} for the {transcript}. 
-    Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript.
-    Give only the legitimate citation and avoid filler words and words like yes, okay, yeah as citations. 
-    The citations must follow these rules:
-    1. Number the references sequentially in the order they first appear in the text.
+    prompt = f"""Create a historian's follow-up chart notes as per the template: {template} based on this transcript:
+    {transcript}
+    The chart notes must include citations for specific information extracted from the transcript. 
+    Ensure the citations follow these rules:
+    1. Number the references sequentially in the order they first appear.
     2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
-    3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
+    3. Avoid filler words like 'yes', 'okay', 'yeah'. 
+    4. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}.
+    """
 
     try:
         response = model.generate_content([prompt])
+        if not response or not response.candidates:
+            st.warning("No response from the model. Please check the template or try again.")
+            return None
         return response
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
+
 
 def parse_chart_notes_for_citations(response):
     """Parse the raw response to extract sentences and associated citations."""
@@ -298,9 +304,11 @@ def parse_chart_notes_for_citations(response):
     citations_dict = {}
     all_citations = {}
     next_citation_number = 1
+    
 
     # Extract content text from the response
     content_text = response.candidates[0].content.parts[0].text.strip()
+    st.write(content_text)
 
     lines = content_text.splitlines()
     for line in lines:
@@ -365,7 +373,7 @@ if "selected_note" not in st.session_state:
 if "selected_template" not in st.session_state:
     st.session_state.selected_template = template_1  # Default to template 1
 
-template_options = {"Standard Template 1": template_1, "Standard Template 2": template_2}
+template_options = {"Standard Template 1": template_1, "Historian Follow-up Template 2": template_2}
 template_choice = st.radio("Select a template:", list(template_options.keys()))
 st.session_state.selected_template = template_options[template_choice]
 
@@ -374,7 +382,7 @@ with st.expander("View Selected Template", expanded=False):
     st.text(st.session_state.selected_template)
 
 # Upload file
-uploaded_file = st.file_uploader("Upload a TXT file containing the transcript", type=["json", "txt"])
+uploaded_file = st.file_uploader("Upload a TXT or JSON file containing the transcript", type=["json", "txt"])
 
 if uploaded_file:
     if uploaded_file.type == "application/json":
