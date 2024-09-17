@@ -50,8 +50,110 @@ st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=Tr
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
 # Template definitions
-template_1 = """Template 1 content here"""
-template_2 = """Historian-based Template content here"""
+template_1 = """
+**Chief Complaint**
+
+**Reason for Visit (Summary/Chief Complaint):**  
+A brief summary of the reason for the visit, including relevant past medical and surgical history, social history, family history, and any associated notes or documents.
+
+**History, Assessment, and Plans By Problem:**  
+Details of the problem description and associated information.
+
+**Preventative Care Summary:**  
+Preventative care items were reviewed, including their status, the due dates, and the completion dates. The health maintenance was reviewed and updated.
+
+**Labs & Screening:**  
+Details of the reviewed and ordered labs and screenings.
+
+**Social Screening:**  
+Updates on the patient’s social history and any relevant information.
+
+**Encounter for [Specific Encounter]:**  
+Description of the encounter, including any ordered tests or referrals.
+
+**[Specific Problem/Condition]:**  
+Details of the problem or condition, including associated information, prescribed treatments, or recommendations.
+
+**Review of System:**  
+For the respiratory system, gastrointestinal system, neurological system, and additional systems as needed, details were noted.
+
+**Physical Examination:**  
+Vital signs recorded include the date, time, blood pressure, pulse, respiration, temperature, temperature source, SpO2, weight, and height. The examination included the following:
+
+- **Constitutional:** Relevant details.
+- **ENT:** Relevant details.
+- **Neck:** Relevant details.
+- **Respiratory:** Relevant details.
+- **Cardiovascular:** Relevant details.
+- **Abdomen:** Relevant details.
+- **Psychiatric:** Relevant details.
+- **Skin:** Relevant details.
+- **Neurologic:** Relevant details.
+
+**Current Outpatient Medications:**  
+The patient is currently taking medications with specific instructions provided for each. There are no facility-administered medications for this visit. No follow-up appointments are on file.
+
+**Patient Education:**  
+The patient expressed understanding of the care plan, with details about the understanding and any provided documentation.
+
+**Signature and Notes:**  
+The physician personally evaluated the patient and reviewed the history, physical examination, assessment, and plan as documented by the scribe, [Scribe Name]. Significant findings and changes have been incorporated into the note as needed. Permission to use a virtual scribe was obtained during the encounter by clinical staff.
+
+**Scribe Acknowledgment:**  
+The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
+"""
+template_2 = """
+**Chief Complaint**
+
+**Reason for Visit (Summary/Chief Complaint):**  
+A brief summary of the reason for the visit, including relevant past medical and surgical history, social history, family history, and any associated notes or documents.
+
+**History, Assessment, and Plans By Problem:**  
+Details of the problem description and associated information.
+
+**Preventative Care Summary:**  
+Preventative care items were reviewed, including their status, the due dates, and the completion dates. The health maintenance was reviewed and updated.
+
+**Labs & Screening:**  
+Details of the reviewed and ordered labs and screenings.
+
+**Social Screening:**  
+Updates on the patient’s social history and any relevant information.
+
+**Encounter for [Specific Encounter]:**  
+Description of the encounter, including any ordered tests or referrals.
+
+**[Specific Problem/Condition]:**  
+Details of the problem or condition, including associated information, prescribed treatments, or recommendations.
+
+**Review of System:**  
+For the respiratory system, gastrointestinal system, neurological system, and additional systems as needed, details were noted.
+
+**Physical Examination:**  
+Vital signs recorded include the date, time, blood pressure, pulse, respiration, temperature, temperature source, SpO2, weight, and height. The examination included the following:
+
+- **Constitutional:** Relevant details.
+- **ENT:** Relevant details.
+- **Neck:** Relevant details.
+- **Respiratory:** Relevant details.
+- **Cardiovascular:** Relevant details.
+- **Abdomen:** Relevant details.
+- **Psychiatric:** Relevant details.
+- **Skin:** Relevant details.
+- **Neurologic:** Relevant details.
+
+**Current Outpatient Medications:**  
+The patient is currently taking medications with specific instructions provided for each. There are no facility-administered medications for this visit. No follow-up appointments are on file.
+
+**Patient Education:**  
+The patient expressed understanding of the care plan, with details about the understanding and any provided documentation.
+
+**Signature and Notes:**  
+The physician personally evaluated the patient and reviewed the history, physical examination, assessment, and plan as documented by the scribe, [Scribe Name]. Significant findings and changes have been incorporated into the note as needed. Permission to use a virtual scribe was obtained during the encounter by clinical staff.
+
+**Scribe Acknowledgment:**  
+The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
+"""
 
 def extract_transcript_from_json(json_file):
     """Extract recognizedText from the JSON file."""
