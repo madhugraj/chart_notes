@@ -49,20 +49,6 @@ st.markdown(
 st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
-# Initialize session state variables
-if "transcript" not in st.session_state:
-    st.session_state.transcript = ""
-if "chart_notes_with_citations" not in st.session_state:
-    st.session_state.chart_notes_with_citations = ""
-if "notes" not in st.session_state:
-    st.session_state.notes = []
-if "citations_dict" not in st.session_state:
-    st.session_state.citations_dict = {}
-if "selected_note" not in st.session_state:
-    st.session_state.selected_note = ""
-if "selected_template" not in st.session_state:
-    st.session_state.selected_template = template_1  # Default to template 1
-
 def extract_transcript_from_json(json_file):
     """Extract recognizedText from the JSON file."""
     transcript_text = ""
@@ -346,6 +332,20 @@ Referral
 Follow up"""
 
 # Template selection
+
+# Initialize session state variables
+if "transcript" not in st.session_state:
+    st.session_state.transcript = ""
+if "chart_notes_with_citations" not in st.session_state:
+    st.session_state.chart_notes_with_citations = ""
+if "notes" not in st.session_state:
+    st.session_state.notes = []
+if "citations_dict" not in st.session_state:
+    st.session_state.citations_dict = {}
+if "selected_note" not in st.session_state:
+    st.session_state.selected_note = ""
+if "selected_template" not in st.session_state:
+    st.session_state.selected_template = template_1  # Default to template 1
 template_options = {"Standard Template 1": template_1, "Standard Template 2": template_2}
 template_choice = st.radio("Select a template:", list(template_options.keys()))
 st.session_state.selected_template = template_options[template_choice]
