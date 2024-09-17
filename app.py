@@ -77,7 +77,91 @@ def generate_chart_notes_with_citations(transcript, template):
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return ""
 
+# Modify the parse_chart_notes_for_citations function to filter notes with citations
 def parse_chart_notes_for_citations(chart_notes):
+    """Parse the chart notes to extract sentences and associated citations."""
+    citation_pattern = re.compile(r'\{References: ([^}]+)\}')
+    notes = []
+    citations_dict = {}
+    all_citations = {}
+    next_citation_number = 1
+
+    for line in chart_notes.splitlines():
+        citations = citation_pattern.findall(line)
+        clean_sentence = citation_pattern.sub('', line).strip()
+
+        if clean_sentence:
+            if citations:  # Only add notes with citations
+                notes.append(clean_sentence)
+        
+        if citations:
+            citation_texts = citations[0].split(', ')
+            for citation in citation_texts:
+                match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
+                if match:
+                    citation_number, citation_text = match.groups()
+                    
+                    if citation_text not in all_citations:
+                        all_citations[citation_text] = f"[{next_citation_number}]"
+                        next_citation_number += 1
+                    
+                    if clean_sentence in citations_dict:
+                        citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
+                    else:
+                        citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
+
+    return notes, citations_dict
+
+# Update the dropdown options to filter notes with citations
+if notes:
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Transcript")
+        transcript_area = st.empty()
+        transcript_area.markdown(st.session_state.transcript, unsafe_allow_html=True)
+
+    with col2:
+        st.subheader("Generated Chart Notes")
+        st.text_area("Chart Notes", value=st.session_state.chart_notes_with_citations, height=300, key="chart_notes_display")
+        
+        # Filter notes to show only those with citations
+        filtered_notes = [note for note in st.session_state.notes if note in st.session_state.citations_dict]
+        
+        if filtered_notes:
+            selected_note = st.selectbox("Select a note to see its citation:", filtered_notes, key="note_dropdown")
+            st.session_state.selected_note = selected_note
+
+            # Display citations and highlight transcript
+            if selected_note and selected_note in st.session_state.citations_dict:
+                citations = st.session_state.citations_dict[selected_note]
+                for i, citation in enumerate(citations):
+                    st.text_area(f"Citation {i+1}", value=citation, height=100, key=f"citation_{i}")
+                
+                highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
+                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
+        
+        # Download buttons
+        chart_notes_file = f"Chart_Notes.txt"
+        citations_file = f"Citations.txt"
+        
+        st.download_button(
+            label="Download Chart Notes",
+            data=st.session_state.chart_notes_with_citations,
+            file_name=chart_notes_file,
+            mime="text/plain"
+        )
+        
+        citations_text = "\n".join([f"{note}: {', '.join(citations)}" for note, citations in st.session_state.citations_dict.items()])
+        st.download_button(
+            label="Download Citations",
+            data=citations_text,
+            file_name=citations_file,
+            mime="text/plain"
+        )
+
+
+def parse_chart_notes_for_citations_1(chart_notes):
     """Parse the chart notes to extract sentences and associated citations."""
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
