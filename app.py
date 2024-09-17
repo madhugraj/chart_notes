@@ -3,151 +3,9 @@ import json
 import re
 import google.generativeai as genai
 
-# Retrieve the API key from secrets
-api_key = st.secrets["api_key"]
-genai.configure(api_key=api_key)
-
-generation_config = {
-    "temperature": 0,
-    "top_p": 1.0,
-    "top_k": 34,
-    "max_output_tokens": 8192,
-    "response_mime_type": "text/plain",
-}
-
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    generation_config=generation_config,
-)
-
-# Custom CSS for background color and other styles
-st.markdown(
-    """
-    <style>
-    body {
-        background-color: #013220;  /* Dark forest green background */
-    }
-    .heading {
-        font-size: 40px;
-        color: white;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 10px;
-    }
-    .color-bar {
-        width: 100%;
-        height: 5px;
-        background-color: gold;  /* Gold color bar */
-        margin-bottom: 20px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# Display heading with color bar
-st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
-st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
-
-def extract_transcript_from_json(json_file):
-    """Extract recognizedText from the JSON file."""
-    transcript_text = ""
-    data = json.load(json_file)
-    
-    for transcript in data['transcripts']:
-        for turn in transcript['speakerTurns']:
-            for alt in turn['alternatives']:
-                transcript_text += alt['recognizedText'] + " "
-    
-    return transcript_text.strip()
-
-def generate_chart_notes_with_citations(transcript, template):
-    """Generate chart notes with citations using the model."""
-    prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
-    1. Number the references sequentially in the order they first appear in the text.
-    2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
-    3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
-
-    try:
-        response = model.generate_content([prompt])
-        content_text = response.candidates[0].content.parts[0].text.strip()
-        return content_text
-    except Exception as e:
-        st.error(f"An error occurred while generating chart notes: {str(e)}")
-        return ""
-
-def parse_chart_notes_for_citations(chart_notes):
-    """Parse the chart notes to extract sentences and associated citations."""
-    citation_pattern = re.compile(r'\{References: ([^}]+)\}')
-    notes = []
-    citations_dict = {}
-    all_citations = {}
-    next_citation_number = 1
-    st.write(chart_notes)
-
-    for line in chart_notes.splitlines():
-        citations = citation_pattern.findall(line)
-        clean_sentence = citation_pattern.sub('', line).strip()
-
-        if clean_sentence:
-            if citations:  # Only add notes with citations
-                notes.append(clean_sentence)
-        
-        if citations:
-            citation_texts = citations[0].split(', ')
-            for citation in citation_texts:
-                match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
-                if match:
-                    citation_number, citation_text = match.groups()
-                    
-                    if citation_text not in all_citations:
-                        all_citations[citation_text] = f"[{next_citation_number}]"
-                        next_citation_number += 1
-                    
-                    if clean_sentence in citations_dict:
-                        citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
-                    else:
-                        citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
-        #st.write(notes)
-        #st.write(citations_dict)
-
-    return notes, citations_dict
-
-def highlight_citations(transcript, citations_dict, selected_note):
-    """Highlight all citations in the transcript based on the selected note."""
-    highlighted_transcript = transcript
-    
-    # Check if the selected note has associated citations
-    if selected_note in citations_dict:
-        citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
-        
-        for citation_text in citation_texts:
-            citation_text_escaped = re.escape(citation_text)
-            # Ensure highlighting is done in a case-insensitive manner
-            highlighted_transcript = re.sub(
-                citation_text_escaped,
-                f"<mark style='background-color: yellow'>{citation_text}</mark>",
-                highlighted_transcript,
-                flags=re.IGNORECASE
-            )
-    
-    return highlighted_transcript
-
-# Initialize session state variables
-if "transcript" not in st.session_state:
-    st.session_state.transcript = ""
-if "chart_notes_with_citations" not in st.session_state:
-    st.session_state.chart_notes_with_citations = ""
-if "notes" not in st.session_state:
-    st.session_state.notes = []
-if "citations_dict" not in st.session_state:
-    st.session_state.citations_dict = {}
-if "selected_note" not in st.session_state:
-    st.session_state.selected_note = ""
-if "selected_template" not in st.session_state:
-    st.session_state.selected_template = template_1  # Default to template 1
-
+# Define templates before using them
 template_1 = """
+
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -200,6 +58,7 @@ The physician personally evaluated the patient and reviewed the history, physica
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
 
 """
+
 template_2 = """Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
 
@@ -358,6 +217,147 @@ Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
 Follow up"""
+
+# Retrieve the API key from secrets
+api_key = st.secrets["api_key"]
+genai.configure(api_key=api_key)
+
+generation_config = {
+    "temperature": 0,
+    "top_p": 1.0,
+    "top_k": 34,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+)
+
+# Custom CSS for background color and other styles
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #013220;  /* Dark forest green background */
+    }
+    .heading {
+        font-size: 40px;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .color-bar {
+        width: 100%;
+        height: 5px;
+        background-color: gold;  /* Gold color bar */
+        margin-bottom: 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Display heading with color bar
+st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
+st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
+
+def extract_transcript_from_json(json_file):
+    """Extract recognizedText from the JSON file."""
+    transcript_text = ""
+    data = json.load(json_file)
+    
+    for transcript in data['transcripts']:
+        for turn in transcript['speakerTurns']:
+            for alt in turn['alternatives']:
+                transcript_text += alt['recognizedText'] + " "
+    
+    return transcript_text.strip()
+
+def generate_chart_notes_with_citations(transcript, template):
+    """Generate chart notes with citations using the model."""
+    prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
+    1. Number the references sequentially in the order they first appear in the text.
+    2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
+    3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
+
+    try:
+        response = model.generate_content([prompt])
+        content_text = response.candidates[0].content.parts[0].text.strip()
+        return content_text
+    except Exception as e:
+        st.error(f"An error occurred while generating chart notes: {str(e)}")
+        return ""
+
+def parse_chart_notes_for_citations(chart_notes):
+    """Parse the chart notes to extract sentences and associated citations."""
+    citation_pattern = re.compile(r'\{References: ([^}]+)\}')
+    notes = []
+    citations_dict = {}
+    all_citations = {}
+    next_citation_number = 1
+
+    for line in chart_notes.splitlines():
+        citations = citation_pattern.findall(line)
+        clean_sentence = citation_pattern.sub('', line).strip()
+
+        if clean_sentence:
+            if citations:  # Only add notes with citations
+                notes.append(clean_sentence)
+        
+        if citations:
+            citation_texts = citations[0].split(', ')
+            for citation in citation_texts:
+                match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
+                if match:
+                    citation_number, citation_text = match.groups()
+                    
+                    if citation_text not in all_citations:
+                        all_citations[citation_text] = f"[{next_citation_number}]"
+                        next_citation_number += 1
+                    
+                    if clean_sentence in citations_dict:
+                        citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
+                    else:
+                        citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
+
+    return notes, citations_dict
+
+def highlight_citations(transcript, citations_dict, selected_note):
+    """Highlight all citations in the transcript based on the selected note."""
+    highlighted_transcript = transcript
+    
+    # Check if the selected note has associated citations
+    if selected_note in citations_dict:
+        citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
+        
+        for citation_text in citation_texts:
+            citation_text_escaped = re.escape(citation_text)
+            # Ensure highlighting is done in a case-insensitive manner
+            highlighted_transcript = re.sub(
+                citation_text_escaped,
+                f"<mark style='background-color: yellow'>{citation_text}</mark>",
+                highlighted_transcript,
+                flags=re.IGNORECASE
+            )
+    
+    return highlighted_transcript
+
+# Initialize session state variables
+if "transcript" not in st.session_state:
+    st.session_state.transcript = ""
+if "chart_notes_with_citations" not in st.session_state:
+    st.session_state.chart_notes_with_citations = ""
+if "notes" not in st.session_state:
+    st.session_state.notes = []
+if "citations_dict" not in st.session_state:
+    st.session_state.citations_dict = {}
+if "selected_note" not in st.session_state:
+    st.session_state.selected_note = ""
+if "selected_template" not in st.session_state:
+    st.session_state.selected_template = template_1  # Default to template 1
 
 template_options = {"Standard Template 1": template_1, "Standard Template 2": template_2}
 template_choice = st.radio("Select a template:", list(template_options.keys()))
