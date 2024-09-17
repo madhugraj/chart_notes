@@ -39,12 +39,17 @@ def generate_chart_notes_with_citations(transcript, template):
     2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
     3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
     
-    response = model.generate_content([prompt])
-    content_text = response.candidates[0].content.parts[0].text.strip()
-    return content_text
+    try:
+        response = model.generate_content([prompt])
+        st.write("API Response:", response)  # Debugging
+        content_text = response.candidates[0].content.parts[0].text.strip()
+        return content_text
+    except Exception as e:
+        st.error(f"An error occurred while generating chart notes: {str(e)}")
+        return ""
 
 def parse_chart_notes_for_citations(chart_notes):
-    """Parse the chart notes to extract sentences and associated citations, ensuring correct sequential numbering."""
+    """Parse the chart notes to extract sentences and associated citations."""
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
@@ -56,8 +61,7 @@ def parse_chart_notes_for_citations(chart_notes):
         clean_sentence = citation_pattern.sub('', line).strip()
 
         if clean_sentence:
-            if citations:
-                notes.append(clean_sentence)
+            notes.append(clean_sentence)
         
         if citations:
             citation_texts = citations[0].split(', ')
@@ -98,6 +102,7 @@ def format_citations_dictionary(citations_dict):
 
 # Define the templates
 template_1 = """
+
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -148,9 +153,11 @@ The physician personally evaluated the patient and reviewed the history, physica
 
 **Scribe Acknowledgment:**  
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
+
 """
 
-template_2 = """Historian-
+template_2 = """
+Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
 
 CHIEF COMPLAINT- 
@@ -307,7 +314,8 @@ Lab orders / investigation
 Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
-Follow up"""
+Follow up
+"""
 
 # Initialize session state variables
 if "transcript" not in st.session_state:
@@ -323,20 +331,19 @@ if "selected_note" not in st.session_state:
 if "selected_template" not in st.session_state:
     st.session_state.selected_template = template_1  # Default to template 1
 
+# Template selection
+template_options = {"Standard Template 1": template_1, "Standard Template 2": template_2}
+template_choice = st.radio("Select a template:", list(template_options.keys()))
+st.session_state.selected_template = template_options[template_choice]
+
+# Display selected template
+with st.expander("View Selected Template", expanded=False):
+    st.text(st.session_state.selected_template)
+
 # Upload file
 uploaded_file = st.file_uploader("Upload a JSON or TXT file containing the transcript", type=["json", "txt"])
 
 if uploaded_file:
-    # Button to select templates and show them in expanders (simulating a modal)
-    if st.button("Use Standard Template 1"):
-        st.session_state.selected_template = template_1
-    if st.button("Use Standard Template 2"):
-        st.session_state.selected_template = template_2
-
-    # Simulated pop-up with `st.expander`
-    with st.expander("View Selected Template", expanded=False):
-        st.text(st.session_state.selected_template)  # Only display the selected template inside the expander
-
     if uploaded_file.type == "application/json":
         transcript = extract_transcript_from_json(uploaded_file)
     elif uploaded_file.type == "text/plain":
