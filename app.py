@@ -297,7 +297,7 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the raw response to extract sentences and associated citations."""
-    st.write(response)
+    #st.write(response)
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
@@ -328,6 +328,8 @@ def parse_chart_notes_for_citations(response):
     except AttributeError as e:
         st.error(f"An error occurred while parsing the response: {str(e)}")
         return notes, citations_dict
+    st.write(notes)
+    st.write(citations_dict)
 
     return notes, citations_dict
 
