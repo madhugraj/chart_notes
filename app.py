@@ -114,12 +114,23 @@ def parse_chart_notes_for_citations(chart_notes):
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
     highlighted_transcript = transcript
+    
+    # Check if the selected note has associated citations
     if selected_note in citations_dict:
         citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
+        
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text)
-            highlighted_transcript = re.sub(citation_text_escaped, f"<mark style='background-color: yellow'>{citation_text}</mark>", highlighted_transcript, flags=re.IGNORECASE)
+            # Ensure highlighting is done in a case-insensitive manner
+            highlighted_transcript = re.sub(
+                citation_text_escaped,
+                f"<mark style='background-color: yellow'>{citation_text}</mark>",
+                highlighted_transcript,
+                flags=re.IGNORECASE
+            )
+    
     return highlighted_transcript
+
 
 # Template definitions (assuming they are provided)
 template_1 = """
