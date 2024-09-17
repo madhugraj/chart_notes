@@ -59,7 +59,8 @@ The scribe, [Scribe Name], documented for [Physician Name] during the encounter 
 
 """
 
-template_2 = """Historian-
+template_2 = """
+Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
 
 CHIEF COMPLAINT- 
@@ -216,7 +217,8 @@ Lab orders / investigation
 Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
-Follow up"""
+Follow up
+"""
 
 # Retrieve the API key from secrets
 api_key = st.secrets["api_key"]
@@ -401,21 +403,18 @@ if uploaded_file:
             st.subheader("Generated Chart Notes")
             st.text_area("Chart Notes", value=st.session_state.chart_notes_with_citations, height=300, key="chart_notes_display")
             
-            # Filter notes to show only those with citations
-            filtered_notes = [note for note in st.session_state.notes if note in st.session_state.citations_dict]
-            
-            if filtered_notes:
-                selected_note = st.selectbox("Select a note to see its citation:", filtered_notes, key="note_dropdown")
-                st.session_state.selected_note = selected_note
+            # If there are notes available, display the dropdown
+            selected_note = st.selectbox("Select a note to see its citation:", notes, key="note_dropdown")
+            st.session_state.selected_note = selected_note
 
-                # Display citations and highlight transcript
-                if selected_note and selected_note in st.session_state.citations_dict:
-                    citations = st.session_state.citations_dict[selected_note]
-                    for i, citation in enumerate(citations):
-                        st.text_area(f"Citation {i+1}", value=citation, height=100, key=f"citation_{i}")
-                    
-                    highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
-                    transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
+            # Display citations and highlight transcript
+            if selected_note and selected_note in st.session_state.citations_dict:
+                citations = st.session_state.citations_dict[selected_note]
+                for i, citation in enumerate(citations):
+                    st.text_area(f"Citation {i+1}", value=citation, height=100, key=f"citation_{i}")
+                
+                highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
+                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
             
             # Download buttons
             chart_notes_file = f"Chart_Notes.txt"
