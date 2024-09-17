@@ -191,29 +191,37 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the raw response to extract sentences and associated citations."""
+    st.write(response)
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
 
-    # Check if response has the right structure
-    if hasattr(response.candidates[0], 'text'):
-        content_text = response.candidates[0].text.strip()  # Assuming `text` contains the note content
-    else:
-        st.error("The response structure is not as expected. 'text' field missing.")
+    # Check if response has the right structure - adjust to your actual API response format
+    try:
+        # Assuming the response is a ProtoBuf or dict-like object with candidates
+        content_text = response.candidates[0].output  # Adjust 'output' based on actual field in API response
+
+        # Split the content into lines and parse each line
+        lines = content_text.splitlines()
+
+        for line in lines:
+            # Extract the citation part
+            citations = citation_pattern.findall(line)
+            # Clean the line by removing citation text
+            clean_sentence = citation_pattern.sub('', line).strip()
+
+            if clean_sentence:
+                # Add sentence without citations
+                notes.append(clean_sentence)
+
+            if citations:
+                # Extract and organize the citation text
+                citation_texts = citations[0].split(', ')
+                citations_dict[clean_sentence] = citation_texts
+
+    except AttributeError as e:
+        st.error(f"An error occurred while parsing the response: {str(e)}")
         return notes, citations_dict
-
-    lines = content_text.splitlines()  # Split by lines
-
-    for line in lines:
-        citations = citation_pattern.findall(line)  # Find any citations in the line
-        clean_sentence = citation_pattern.sub('', line).strip()  # Remove citation text from the sentence
-        
-        if clean_sentence:  # Only add non-empty sentences
-            notes.append(clean_sentence)
-        
-        if citations:
-            citation_texts = citations[0].split(', ')
-            citations_dict[clean_sentence] = citation_texts
 
     return notes, citations_dict
 
