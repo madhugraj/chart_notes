@@ -184,7 +184,7 @@ def generate_chart_notes_with_citations(transcript, template):
         if not response or not response.candidates:
             st.warning("No response from the model. Please check the template or try again.")
             return None
-        st.wite(response)
+        st.write(response)
         return response
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
