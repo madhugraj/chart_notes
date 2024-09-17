@@ -379,6 +379,7 @@ if uploaded_file:
 
     if st.button("Generate Chart Notes"):
         response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
+        st.write(response)
         if response:
             notes, citations_dict = parse_chart_notes_for_citations(response)
             
