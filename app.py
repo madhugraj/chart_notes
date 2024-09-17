@@ -280,43 +280,50 @@ def generate_chart_notes_with_citations(transcript, template):
     2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
     3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
 
-
     try:
         response = model.generate_content([prompt])
-        content_text = response.candidates[0].content.parts[0].text.strip()
-        return content_text,response
+        return response
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
-        return ""
+        return None
 
-def parse_chart_notes_for_citations(chart_notes):
-    """Parse the chart notes to extract sentences and associated citations."""
+def parse_chart_notes_for_citations(response):
+    """Parse the raw response to extract sentences and associated citations."""
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
-    
-    lines = chart_notes.splitlines()
-    
-    for line in lines:
+    all_citations = {}
+    next_citation_number = 1
+
+    # Extract content text from the response
+    content_text = response.candidates[0].content.parts[0].text.strip()
+
+    for line in content_text.splitlines():
         citations = citation_pattern.findall(line)
         clean_sentence = citation_pattern.sub('', line).strip()
-        
+
         if clean_sentence:
             if citations:  # Only add notes with citations
                 notes.append(clean_sentence)
-            
-            if citations:
-                citation_texts = citations[0].split(', ')
-                citation_entries = []
-                for citation in citation_texts:
-                    match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
-                    if match:
-                        citation_number, citation_text = match.groups()
-                        citation_entries.append(f'[{citation_number}]: "{citation_text}"')
-                
-                citations_dict[clean_sentence] = citation_entries
+        
+        if citations:
+            citation_texts = citations[0].split(', ')
+            for citation in citation_texts:
+                match = re.search(r'\[(\d+)\]:\s*"(.*?)"', citation)
+                if match:
+                    citation_number, citation_text = match.groups()
+                    
+                    if citation_text not in all_citations:
+                        all_citations[citation_text] = f"[{next_citation_number}]"
+                        next_citation_number += 1
+                    
+                    if clean_sentence in citations_dict:
+                        citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
+                    else:
+                        citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
 
     return notes, citations_dict
+
 
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
@@ -376,12 +383,13 @@ if uploaded_file:
     st.session_state.transcript = transcript
 
     if st.button("Generate Chart Notes"):
-        chart_notes_with_citations,response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
-        notes, citations_dict = parse_chart_notes_for_citations(response)
-        
-        st.session_state.chart_notes_with_citations = chart_notes_with_citations
-        st.session_state.notes = notes
-        st.session_state.citations_dict = citations_dict
+        response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
+        if response:
+            notes, citations_dict = parse_chart_notes_for_citations(response)
+            
+            st.session_state.chart_notes_with_citations = response.candidates[0].content.parts[0].text.strip()
+            st.session_state.notes = notes
+            st.session_state.citations_dict = citations_dict
 
     # Ensure notes are initialized before accessing
     notes = st.session_state.get("notes", [])
