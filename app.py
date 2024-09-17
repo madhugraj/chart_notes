@@ -107,6 +107,8 @@ def parse_chart_notes_for_citations(chart_notes):
                         citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
                     else:
                         citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
+        st.write(notes)
+        st.write(citations_dict)
 
     return notes, citations_dict
 
