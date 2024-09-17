@@ -181,11 +181,12 @@ def generate_chart_notes_with_citations(transcript, template):
 
     try:
         response = model.generate_content([prompt])
+        content_text = response.candidates[0].content.parts[0].text.strip()
         if not response or not response.candidates:
             st.warning("No response from the model. Please check the template or try again.")
             return None
-        st.write(response)
-        return response
+        st.write(content_text)
+        return content_text
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
