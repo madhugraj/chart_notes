@@ -184,6 +184,7 @@ def generate_chart_notes_with_citations(transcript, template):
         if not response or not response.candidates:
             st.warning("No response from the model. Please check the template or try again.")
             return None
+        st.wite(response)
         return response
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
@@ -191,7 +192,7 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the raw response to extract sentences and associated citations."""
-    st.write(response)
+    #st.write(response)
     citation_pattern = re.compile(r'\{References: ([^}]+)\}')
     notes = []
     citations_dict = {}
