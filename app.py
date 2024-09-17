@@ -307,8 +307,7 @@ Lab orders / investigation
 Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
-Follow up
-"""
+Follow up"""
 
 # Initialize session state variables
 if "transcript" not in st.session_state:
@@ -328,15 +327,16 @@ if "selected_template" not in st.session_state:
 uploaded_file = st.file_uploader("Upload a JSON or TXT file containing the transcript", type=["json", "txt"])
 
 if uploaded_file:
-    # Button to select templates
+    # Button to select templates and show them in expanders (simulating a modal)
     if st.button("Use Standard Template 1"):
         st.session_state.selected_template = template_1
     if st.button("Use Standard Template 2"):
         st.session_state.selected_template = template_2
 
-    st.write("Selected Template:")
-    st.text(st.session_state.selected_template)  # Display selected template for confirmation
-    
+    # Simulated pop-up with `st.expander`
+    with st.expander("View Selected Template", expanded=False):
+        st.text(st.session_state.selected_template)  # Only display the selected template inside the expander
+
     if uploaded_file.type == "application/json":
         transcript = extract_transcript_from_json(uploaded_file)
     elif uploaded_file.type == "text/plain":
