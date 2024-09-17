@@ -284,7 +284,7 @@ def generate_chart_notes_with_citations(transcript, template):
     try:
         response = model.generate_content([prompt])
         content_text = response.candidates[0].content.parts[0].text.strip()
-        return content_text
+        return content_text,response
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return ""
@@ -376,8 +376,8 @@ if uploaded_file:
     st.session_state.transcript = transcript
 
     if st.button("Generate Chart Notes"):
-        chart_notes_with_citations = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
-        notes, citations_dict = parse_chart_notes_for_citations(chart_notes_with_citations)
+        chart_notes_with_citations,response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
+        notes, citations_dict = parse_chart_notes_for_citations(response)
         
         st.session_state.chart_notes_with_citations = chart_notes_with_citations
         st.session_state.notes = notes
