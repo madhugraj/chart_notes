@@ -67,7 +67,8 @@ def generate_chart_notes_with_citations(transcript, template):
     1. Number the references sequentially in the order they first appear in the text.
     2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
     3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
-    
+
+
     try:
         response = model.generate_content([prompt])
         content_text = response.candidates[0].content.parts[0].text.strip()
@@ -102,6 +103,7 @@ def parse_chart_notes_for_citations(chart_notes):
                         all_citations[citation_text] = f"[{next_citation_number}]"
                         next_citation_number += 1
                     
+
                     if clean_sentence in citations_dict:
                         citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
                     else:
@@ -346,6 +348,7 @@ if "selected_note" not in st.session_state:
     st.session_state.selected_note = ""
 if "selected_template" not in st.session_state:
     st.session_state.selected_template = template_1  # Default to template 1
+
 template_options = {"Standard Template 1": template_1, "Standard Template 2": template_2}
 template_choice = st.radio("Select a template:", list(template_options.keys()))
 st.session_state.selected_template = template_options[template_choice]
@@ -400,3 +403,22 @@ if uploaded_file:
                 
                 highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
                 transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
+            
+            # Download buttons
+            chart_notes_file = f"Chart_Notes.txt"
+            citations_file = f"Citations.txt"
+            
+            st.download_button(
+                label="Download Chart Notes",
+                data=st.session_state.chart_notes_with_citations,
+                file_name=chart_notes_file,
+                mime="text/plain"
+            )
+            
+            citations_text = "\n".join([f"{note}: {', '.join(citations)}" for note, citations in st.session_state.citations_dict.items()])
+            st.download_button(
+                label="Download Citations",
+                data=citations_text,
+                file_name=citations_file,
+                mime="text/plain"
+            )
