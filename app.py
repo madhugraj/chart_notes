@@ -83,6 +83,7 @@ def parse_chart_notes_for_citations(chart_notes):
     citations_dict = {}
     all_citations = {}
     next_citation_number = 1
+    st.write(chart_notes)
 
     for line in chart_notes.splitlines():
         citations = citation_pattern.findall(line)
@@ -107,8 +108,8 @@ def parse_chart_notes_for_citations(chart_notes):
                         citations_dict[clean_sentence].append(f'{all_citations[citation_text]}: "{citation_text}"')
                     else:
                         citations_dict[clean_sentence] = [f'{all_citations[citation_text]}: "{citation_text}"']
-        st.write(notes)
-        st.write(citations_dict)
+        #st.write(notes)
+        #st.write(citations_dict)
 
     return notes, citations_dict
 
