@@ -328,7 +328,7 @@ def parse_chart_notes_for_citations(response):
     except AttributeError as e:
         st.error(f"An error occurred while parsing the response: {str(e)}")
         return notes, citations_dict
-    st.write(notes)
+    #st.write(notes)
     st.write(citations_dict)
 
     return notes, citations_dict
