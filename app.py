@@ -49,6 +49,19 @@ st.markdown(
 st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
+# Initialize session state variables
+if "transcript" not in st.session_state:
+    st.session_state.transcript = ""
+if "chart_notes_with_citations" not in st.session_state:
+    st.session_state.chart_notes_with_citations = ""
+if "notes" not in st.session_state:
+    st.session_state.notes = []
+if "citations_dict" not in st.session_state:
+    st.session_state.citations_dict = {}
+if "selected_note" not in st.session_state:
+    st.session_state.selected_note = ""
+if "selected_template" not in st.session_state:
+    st.session_state.selected_template = template_1  # Default to template 1
 
 def extract_transcript_from_json(json_file):
     """Extract recognizedText from the JSON file."""
@@ -71,7 +84,6 @@ def generate_chart_notes_with_citations(transcript, template):
     
     try:
         response = model.generate_content([prompt])
-        #st.write("API Response:", response)  # Debugging
         content_text = response.candidates[0].content.parts[0].text.strip()
         return content_text
     except Exception as e:
@@ -111,15 +123,6 @@ def parse_chart_notes_for_citations(chart_notes):
 
     return notes, citations_dict
 
-def highlight_citations_1(transcript, citations_dict, selected_note):
-    """Highlight all citations in the transcript based on the selected note."""
-    if selected_note in citations_dict:
-        citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
-        for citation_text in citation_texts:
-            citation_text_escaped = re.escape(citation_text)
-            transcript = re.sub(citation_text_escaped, f"<mark style='background-color: yellow'>{citation_text}</mark>", transcript, flags=re.IGNORECASE)
-    return transcript
-
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
     highlighted_transcript = transcript
@@ -127,52 +130,11 @@ def highlight_citations(transcript, citations_dict, selected_note):
         citation_texts = [citation.split(": ")[1].strip('"') for citation in citations_dict[selected_note]]
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text)
-            # Apply citation highlight (HTML <mark> tag)
             highlighted_transcript = re.sub(citation_text_escaped, f"<mark style='background-color: yellow'>{citation_text}</mark>", highlighted_transcript, flags=re.IGNORECASE)
     return highlighted_transcript
 
-# In the Streamlit app's code:
-if st.session_state.notes:
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("Transcript")
-        transcript_area = st.empty()  # Create an empty markdown area for dynamic updates
-        highlighted_transcript = st.session_state.transcript  # Default to the non-highlighted transcript
-
-    with col2:
-        st.subheader("Generated Chart Notes")
-        st.text_area("Chart Notes", value=st.session_state.chart_notes_with_citations, height=300, key="chart_notes_display")
-        
-        # If there are notes available, display the dropdown
-        if st.session_state.notes:
-            selected_note = st.selectbox("Select a note to see its citation:", st.session_state.notes, key="note_dropdown")
-            st.session_state.selected_note = selected_note
-
-            # Display citations and highlight transcript
-            if selected_note and selected_note in st.session_state.citations_dict:
-                citations = st.session_state.citations_dict[selected_note]
-                for i, citation in enumerate(citations):
-                    st.text_area(f"Citation {i+1}", value=citation, height=100, key=f"citation_{i}")
-                
-                # Highlight citations in the transcript and update the transcript area
-                highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
-                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)  # Update the markdown area
-
-
-def format_citations_dictionary(citations_dict):
-    """Format citations dictionary as a string for download."""
-    formatted_citations = []
-    for note, citations in citations_dict.items():
-        formatted_citations.append(f"Note: {note}")
-        for citation in citations:
-            formatted_citations.append(f"  {citation}")
-        formatted_citations.append("")  # Add a blank line between notes
-    return "\n".join(formatted_citations)
-
-# Define the templates
+# Template definitions (assuming they are provided)
 template_1 = """
-
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -223,11 +185,8 @@ The physician personally evaluated the patient and reviewed the history, physica
 
 **Scribe Acknowledgment:**  
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
-
 """
-
-template_2 = """
-Historian-
+template_2 = """Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
 
 CHIEF COMPLAINT- 
@@ -384,22 +343,7 @@ Lab orders / investigation
 Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
-Follow up
-"""
-
-# Initialize session state variables
-if "transcript" not in st.session_state:
-    st.session_state.transcript = ""
-if "chart_notes_with_citations" not in st.session_state:
-    st.session_state.chart_notes_with_citations = ""
-if "notes" not in st.session_state:
-    st.session_state.notes = []
-if "citations_dict" not in st.session_state:
-    st.session_state.citations_dict = {}
-if "selected_note" not in st.session_state:
-    st.session_state.selected_note = ""
-if "selected_template" not in st.session_state:
-    st.session_state.selected_template = template_1  # Default to template 1
+Follow up"""
 
 # Template selection
 template_options = {"Standard Template 1": template_1, "Standard Template 2": template_2}
@@ -429,7 +373,10 @@ if uploaded_file:
         st.session_state.notes = notes
         st.session_state.citations_dict = citations_dict
 
-    if st.session_state.notes:
+    # Ensure notes are initialized before accessing
+    notes = st.session_state.get("notes", [])
+    
+    if notes:
         col1, col2 = st.columns(2)
         
         with col1:
@@ -442,19 +389,14 @@ if uploaded_file:
             st.text_area("Chart Notes", value=st.session_state.chart_notes_with_citations, height=300, key="chart_notes_display")
             
             # If there are notes available, display the dropdown
-            if st.session_state.notes:
-                selected_note = st.selectbox("Select a note to see its citation:", st.session_state.notes, key="note_dropdown")
-                st.session_state.selected_note = selected_note
+            selected_note = st.selectbox("Select a note to see its citation:", notes, key="note_dropdown")
+            st.session_state.selected_note = selected_note
 
-                # Display citations and highlight transcript
-                if selected_note and selected_note in st.session_state.citations_dict:
-                    citations = st.session_state.citations_dict[selected_note]
-                    for i, citation in enumerate(citations):
-                        st.text_area(f"Citation {i+1}", value=citation, height=100, key=f"citation_{i}")
-                    
-                    highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
-                    transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
-
-        st.download_button("Download Chart Notes", data=st.session_state.chart_notes_with_citations, file_name="chart_notes.txt", mime="text/plain")
-        citations_text = format_citations_dictionary(st.session_state.citations_dict)
-        st.download_button("Download Citations Dictionary", data=citations_text, file_name="citations_dictionary.txt", mime="text/plain")
+            # Display citations and highlight transcript
+            if selected_note and selected_note in st.session_state.citations_dict:
+                citations = st.session_state.citations_dict[selected_note]
+                for i, citation in enumerate(citations):
+                    st.text_area(f"Citation {i+1}", value=citation, height=100, key=f"citation_{i}")
+                
+                highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
+                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
