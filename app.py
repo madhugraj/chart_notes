@@ -308,7 +308,7 @@ def parse_chart_notes_for_citations(response):
 
     # Extract content text from the response
     content_text = response.candidates[0].content.parts[0].text.strip()
-    st.write(content_text)
+    
 
     lines = content_text.splitlines()
     for line in lines:
@@ -318,7 +318,7 @@ def parse_chart_notes_for_citations(response):
         if clean_sentence:
             if citations:  # Only add notes with citations
                 notes.append(clean_sentence)
-        
+        st.write(clean_sentence)
         if citations:
             citation_texts = citations[0].split(', ')
             for citation in citation_texts:
@@ -373,7 +373,7 @@ if "selected_note" not in st.session_state:
 if "selected_template" not in st.session_state:
     st.session_state.selected_template = template_1  # Default to template 1
 
-template_options = {"Standard Template 1": template_1, "Historian Follow-up Template 2": template_2}
+template_options = {"Template 1": template_1, "Template 2": template_2}
 template_choice = st.radio("Select a template:", list(template_options.keys()))
 st.session_state.selected_template = template_options[template_choice]
 
