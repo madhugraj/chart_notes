@@ -50,7 +50,7 @@ st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=Tr
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
 # Template definitions
-template_1 = """ 
+template_1 = """
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -284,8 +284,8 @@ def generate_chart_notes_with_citations(transcript, template):
 
     try:
         response = model.generate_content([prompt])
-        content_text = response.candidates[0].content.strip()
-        if not response or not response.candidates:
+        content_text = response.strip()  # Directly use the response as plain text
+        if not content_text:
             st.warning("No response from the model. Please check the template or try again.")
             return None
         st.write(content_text)
@@ -301,8 +301,8 @@ def parse_chart_notes_for_citations(response):
     citations_dict = {}
 
     try:
-        # Assuming the response is a dict-like object with candidates
-        content_text = response.candidates[0].content.strip()  # Adjust based on actual field in API response
+        # Use the response directly as plain text
+        content_text = response.strip()
 
         # Find all citations
         citations_matches = citation_pattern.findall(content_text)
