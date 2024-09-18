@@ -295,7 +295,7 @@ def generate_chart_notes_with_citations(transcript, template):
         return None
 
 
-def parse_chart_notes_for_citations(response):
+def parse_chart_notes_for_citations_1(response):
     """Parse the raw response to extract sentences and associated citations."""
     citation_pattern = re.compile(r'\{References: \[([^\]]+)\]\}')
     notes = []
@@ -336,6 +336,62 @@ def parse_chart_notes_for_citations(response):
     #st.write("Citations Dictionary:", st.session_state.citations_dict)
 
     return notes, citations_dict
+    
+def parse_chart_notes_for_citations(response):
+    """Generate chart notes with citations using the model."""
+    # Define a prompt that guides the model to split the response into JSON format
+    prompt = f"""In the response {response}, you'll observe a structure with subheadings, notes, and references. 
+    Please split the structure into JSON with the following format:
+    {{
+      "Subheading": "subheading text",
+      "Notes": [
+        {{
+          "note": "note text",
+          "Reference": [
+            "reference text 1",
+            "reference text 2"
+          ]
+        }},
+        ...
+      ]
+    }}
+
+    Response:
+    {response}
+    """
+
+    try:
+        # Generate parsed content using the model
+        response = model.generate_content([prompt])
+
+        # Parse the response content into JSON
+        content_text = response.candidates[0].content.strip()
+        parsed_data = json.loads(content_text)
+
+        # Extract notes and citations from the parsed data
+        notes = []
+        citations_dict = {}
+
+        for section in parsed_data:
+            subheading = section.get("Subheading", "")
+            for note_item in section.get("Notes", []):
+                note_text = note_item.get("note", "")
+                references = note_item.get("Reference", [])
+
+                # Collect notes
+                if note_text:
+                    notes.append(note_text)
+
+                # Collect citations for the note
+                if note_text and references:
+                    citations_dict[note_text] = references
+
+        return notes, citations_dict
+
+    except Exception as e:
+        st.error(f"An error occurred while parsing the response: {str(e)}")
+        return None, None
+
 
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
