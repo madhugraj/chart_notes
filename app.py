@@ -317,8 +317,8 @@ def parse_chart_notes_for_citations(response):
     # Define a prompt that guides the model to split the response into a dictionary format
     prompt = f"""In the response {response}, you'll observe a structure with subheadings, notes, and references. 
     Validate the notes and the references for correctness, remove the filler word references like yeah, okay etc.
-    eliminate unnessary reference.
-    retain critical and meaningful reference and limit the reference to a maximum of 5 based on high importance.
+    Eliminate unnessary reference. Aviod repeted notes and reference.
+    Retain critical and meaningful reference and limit the reference to a maximum of 5 based on high importance.
     Please split the structure into a dictionary with the following format:
     {{
       "Subheading": "subheading text",
