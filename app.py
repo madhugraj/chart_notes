@@ -317,7 +317,8 @@ def generate_chart_notes_with_citations(transcript, template):
 def parse_chart_notes_for_citations(response):
     """Generate chart notes with citations using the model."""
     # Define a prompt that guides the model to split the response into JSON format
-    prompt = f"""In the response {response}, you'll observe a structure with subheadings, notes, and references. 
+    prompt = f"""In the response {response}, you'll observe a structure with subheadings, notes, and references. Analyse the reference and notes for correct citation.
+    clean the reference by removing the filler words.
     Please split the structure into JSON with the following format:
     {{
       "Subheading": "subheading text",
