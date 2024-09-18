@@ -312,13 +312,16 @@ def generate_chart_notes_with_citations(transcript, template):
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
+
+
 def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations from the generated response."""
+    
     # Define a prompt that guides the model to split the response into a dictionary format
     prompt = f"""In the response {response}, you'll observe a structure with subheadings, notes, and references. 
-    Validate the notes and the references for correctness, remove the filler word references like yeah, okay etc.
-    Eliminate unnessary reference. Aviod repeted notes and reference.
-    Retain critical and meaningful reference and limit the reference to a maximum of 5 based on high importance.
+    Validate the notes and the references for correctness, remove filler words like 'yeah', 'okay', etc.
+    Eliminate unnecessary references and avoid repeated notes and references.
+    Retain critical and meaningful references and limit them to a maximum of 5 based on importance.
     Please split the structure into a dictionary with the following format:
     {{
       "Subheading": "subheading text",
@@ -340,15 +343,19 @@ def parse_chart_notes_for_citations(response):
 
     try:
         # Generate parsed content using the model
-        response = model.generate_content([prompt])
+        generated_response = model.generate_content([prompt])
 
         # Extract the parsed content as text
-        #content_text = response.candidates[0].text.strip()  # Assuming text attribute contains the response
-        content_text = response.candidates[0].content.parts[0].text.strip()
+        content_text = generated_response.candidates[0].content.parts[0].text.strip()
+        
+        # Debugging: Output the content_text to inspect it
         st.write("content_text")
         st.write(content_text)
-                 
 
+        # Fix JSON formatting issues: wrap content in square brackets if needed
+        if not content_text.startswith("["):
+            content_text = "[" + content_text + "]"
+        
         # Parse the content into JSON (or a dictionary)
         parsed_data = json.loads(content_text)
 
@@ -375,6 +382,9 @@ def parse_chart_notes_for_citations(response):
 
         return notes, citations_dict
 
+    except json.JSONDecodeError as e:
+        st.error(f"JSON parsing error: {str(e)}")
+        return None, None
     except Exception as e:
         st.error(f"An error occurred while parsing the response: {str(e)}")
         return None, None
