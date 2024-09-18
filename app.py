@@ -302,7 +302,7 @@ def generate_chart_notes_with_citations(transcript, template):
 
         # Check the response structure
         if hasattr(response, 'candidates') and response.candidates:
-            content_text = response.candidates[0]['content'].strip()  # Assuming response is a dictionary
+            content_text = response.candidates[0].content.parts[0].text.strip()
         else:
             st.warning("No response from the model. Please check the template or try again.")
             return None
@@ -342,7 +342,8 @@ def parse_chart_notes_for_citations(response):
         response = model.generate_content([prompt])
 
         # Parse the response content into JSON
-        content_text = response.candidates[0].content.strip()
+        #content_text = response.candidates[0].content.strip()
+        content_text = response.candidates[0].content.parts[0].text.strip()
         parsed_data = json.loads(content_text)
         st.write(parsed_data)
 
