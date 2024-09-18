@@ -275,6 +275,7 @@ def extract_transcript_from_json(json_file):
     
     return transcript_text.strip()
 
+# Function to generate chart notes with a timer
 def generate_chart_notes_with_citations(transcript, template):
     """Generate chart notes with citations using the model."""
     prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
@@ -283,20 +284,34 @@ def generate_chart_notes_with_citations(transcript, template):
     3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
 
     try:
+        # Start timer
+        start_time = time.time()
+
+        # Generate the response
         response = model.generate_content([prompt])
-        content_text = response.candidates[0].content.parts[0].text.strip() if hasattr(response, 'candidates') else response.strip()
-        if not response or (hasattr(response, 'candidates') and not response.candidates):
+
+        # Stop timer
+        end_time = time.time()
+
+        # Calculate elapsed time
+        elapsed_time = end_time - start_time
+
+        # Show elapsed time in seconds
+        st.write(f"Time taken to generate the chart notes: {elapsed_time:.2f} seconds")
+
+        # Extract the content properly
+        if hasattr(response, 'candidates') and response.candidates:
+            content_text = response.candidates[0].content.parts[0].text.strip()
+        else:
             st.warning("No response from the model. Please check the template or try again.")
             return None
-        #st.write(content_text)
+
         return content_text
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
 
-
-
-    
+  
 def parse_chart_notes_for_citations(response):
     """Generate chart notes with citations using the model."""
     # Define a prompt that guides the model to split the response into JSON format
