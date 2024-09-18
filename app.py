@@ -303,8 +303,13 @@ def generate_chart_notes_with_citations(transcript, template):
 
         # Check the response structure
         if hasattr(response, 'candidates') and response.candidates:
-            content_text = response.candidates[0].content.strip()
-            return content_text
+            content = response.candidates[0].content
+            if isinstance(content, str):
+                content_text = content.strip()
+                return content_text
+            else:
+                st.warning("Response content is not a string. Content may not be properly formatted.")
+                return None
         else:
             st.warning("No response from the model. Please check the template or try again.")
             return None
