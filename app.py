@@ -303,7 +303,8 @@ def generate_chart_notes_with_citations(transcript, template):
 
         # Check the response structure
         if hasattr(response, 'candidates') and response.candidates:
-            content = response.candidates[0].content
+            #content = response.candidates[0].content
+            content = response.candidates[0].content.parts[0].text.strip()
             if isinstance(content, str):
                 content_text = content.strip()
                 return content_text
