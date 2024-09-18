@@ -342,7 +342,8 @@ def parse_chart_notes_for_citations(response):
         response = model.generate_content([prompt])
 
         # Extract and sanitize content_text
-        content_text = response.candidates[0].content.strip()
+        #content_text = response.candidates[0].content.strip()
+        content_text = response.candidates[0].content.parts[0].text.strip()
 
         # Debugging output: Check raw content text
         st.write(f"Raw content text before parsing: {repr(content_text)}")
