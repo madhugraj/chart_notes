@@ -315,10 +315,11 @@ def generate_chart_notes_with_citations(transcript, template):
 
   
 def parse_chart_notes_for_citations(response):
-    """Generate chart notes with citations using the model."""
-    # Define a prompt that guides the model to split the response into JSON format
+    """Parse the chart notes and citations from the generated response."""
+    # Define a prompt that guides the model to split the response into a dictionary format
     prompt = f"""In the response {response}, you'll observe a structure with subheadings, notes, and references. 
-    Please split the structure into JSON with the following format:
+    Validate the notes and the references for correctness, remove the filler word references.
+    Please split the structure into a dictionary with the following format:
     {{
       "Subheading": "subheading text",
       "Notes": [
@@ -341,18 +342,38 @@ def parse_chart_notes_for_citations(response):
         # Generate parsed content using the model
         response = model.generate_content([prompt])
 
-        # Extract and sanitize content_text
-        #content_text = response.candidates[0].content.strip()
-        content_text = response.candidates[0].content.parts[0].text.strip()
+        # Extract the parsed content as text
+        content_text = response.candidates[0].text.strip()  # Assuming text attribute contains the response
 
-        # Debugging output: Check raw content text
-        st.write(f"Raw content text before parsing: {repr(content_text)}")
+        # Parse the content into JSON (or a dictionary)
+        parsed_data = json.loads(content_text)
 
-        # Sanitize and parse JSON
-        content_text = content_text.strip()
-        if not content_text:
-            st.error("Content is empty, cannot parse JSON.")
-            return None, None
+        # Display parsed data
+        st.write(parsed_data)
+
+        # Extract notes and citations from the parsed data
+        notes = []
+        citations_dict = {}
+
+        for section in parsed_data:
+            subheading = section.get("Subheading", "")
+            for note_item in section.get("Notes", []):
+                note_text = note_item.get("note", "")
+                references = note_item.get("Reference", [])
+
+                # Collect notes
+                if note_text:
+                    notes.append(note_text)
+
+                # Collect citations for the note
+                if note_text and references:
+                    citations_dict[note_text] = references
+
+        return notes, citations_dict
+
+    except Exception as e:
+        st.error(f"An error occurred while parsing the response: {str(e)}")
+        return None, None
 
         # Parse the response content into JSON
         parsed_data = json.loads(content_text)
