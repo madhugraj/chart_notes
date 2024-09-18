@@ -376,46 +376,7 @@ def parse_chart_notes_for_citations(response):
 
         return notes, citations_dict
 
-    except Exception as e:
-        st.error(f"An error occurred while parsing the response: {str(e)}")
-        return None, None
-
-        # Parse the response content into JSON
-        parsed_data = json.loads(content_text)
-        st.write(parsed_data)
-
-        # Extract notes and citations from the parsed data
-        notes = []
-        citations_dict = {}
-
-        for section in parsed_data:
-            subheading = section.get("Subheading", "")
-            for note_item in section.get("Notes", []):
-                note_text = note_item.get("note", "")
-                references = note_item.get("Reference", [])
-
-                # Collect notes
-                if note_text:
-                    notes.append(note_text)
-
-                # Collect citations for the note
-                if note_text and references:
-                    citations_dict[note_text] = references
-
-        return notes, citations_dict
-
-    except json.JSONDecodeError as e:
-        st.error(f"An error occurred while parsing the response: {str(e)}")
-        st.write(f"Content that failed to parse: {repr(content_text)}")
-        return None, None
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {str(e)}")
-        return None, None
-
-    except Exception as e:
-        st.error(f"An error occurred while parsing the response: {str(e)}")
-        return None, None
-
+    
 
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
