@@ -306,7 +306,7 @@ def generate_chart_notes_with_citations(transcript, template):
         else:
             st.warning("No response from the model. Please check the template or try again.")
             return None
-
+        st.write(content_text)
         return content_text
 
     except Exception as e:
@@ -344,6 +344,7 @@ def parse_chart_notes_for_citations(response):
         # Parse the response content into JSON
         #content_text = response.candidates[0].content.strip()
         content_text = response.candidates[0].content.parts[0].text.strip()
+        st.write(content_text)
         parsed_data = json.loads(content_text)
         st.write(parsed_data)
 
