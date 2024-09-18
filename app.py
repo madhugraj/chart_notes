@@ -312,8 +312,6 @@ def generate_chart_notes_with_citations(transcript, template):
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
-
-  
 def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations from the generated response."""
     # Define a prompt that guides the model to split the response into a dictionary format
@@ -347,13 +345,12 @@ def parse_chart_notes_for_citations(response):
         content_text = response.candidates[0].content.parts[0].text.strip()
         st.write("content_text")
         st.write(content_text)
+                 
 
         # Parse the content into JSON (or a dictionary)
         parsed_data = json.loads(content_text)
 
         # Display parsed data
-        st.write("parsed_data")
-
         st.write(parsed_data)
 
         # Extract notes and citations from the parsed data
@@ -375,6 +372,12 @@ def parse_chart_notes_for_citations(response):
                     citations_dict[note_text] = references
 
         return notes, citations_dict
+
+    except Exception as e:
+        st.error(f"An error occurred while parsing the response: {str(e)}")
+        return None, None
+
+  
 
     
 
