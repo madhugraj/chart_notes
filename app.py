@@ -314,7 +314,7 @@ def generate_chart_notes_with_citations(transcript, template):
         return None
 
 
-def parse_chart_notes_for_citations(response):
+def parse_chart_notes_for_citations_1(response):
     """Parse the chart notes and citations from the generated response."""
 
     # Define the prompt to generate structured content
@@ -396,6 +396,82 @@ def parse_chart_notes_for_citations(response):
         return None, None
 
   
+def parse_chart_notes_for_citations(response):
+    """Parse the chart notes and citations from the generated response without subheadings."""
+
+    # Define the prompt to generate structured content
+    prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
+    Remove the subheadings, and retain only the important notes and their references.
+    Eliminate filler words like 'yeah', 'okay', etc., and avoid repeated or unnecessary references.
+    Ensure that each note has no more than 5 key references.
+    
+    Please structure the output as:
+    [
+      {{
+        "note": "note text",
+        "Reference": [
+          "reference text 1",
+          "reference text 2"
+        ]
+      }},
+      ...
+    ]
+    
+    Response:
+    {response}
+    """
+
+    try:
+        # Generate the content using the model
+        generated_response = model.generate_content([prompt])
+
+        # Extract the parsed content as text
+        content_text = generated_response.candidates[0].content.parts[0].text.strip()
+
+        # Debugging: print raw content
+        st.write("Raw content_text received:")
+        st.write(content_text)
+
+        # Fix JSON formatting issues: check and clean raw content
+        content_text = content_text.strip()
+
+        # Ensure the format is valid JSON (clean and load)
+        if content_text.startswith("{"):
+            content_text = "[" + content_text + "]"
+
+        st.write("Formatted content_text:")
+        st.write(content_text)
+
+        # Parse the content into JSON (or a dictionary)
+        parsed_data = json.loads(content_text)
+
+        # Display parsed data for debugging
+        st.write(parsed_data)
+
+        # Extract notes and citations
+        notes = []
+        citations_dict = {}
+
+        for note_item in parsed_data:
+            note_text = note_item.get("note", "")
+            references = note_item.get("Reference", [])
+
+            # Collect notes
+            if note_text:
+                notes.append(note_text)
+
+            # Collect citations for the note
+            if note_text and references:
+                citations_dict[note_text] = references
+
+        return notes, citations_dict
+
+    except json.JSONDecodeError as e:
+        st.error(f"JSON parsing error: {str(e)}")
+        return None, None
+    except Exception as e:
+        st.error(f"An error occurred while parsing the response: {str(e)}")
+        return None, None
 
     
 
