@@ -345,7 +345,7 @@ def parse_chart_notes_for_citations(response):
         # Parse the response content into JSON
         #content_text = response.candidates[0].content.strip()
         content_text = response.candidates[0].content.parts[0].text.strip()
-        st.write(content_text)
+        #st.write(content_text)
         parsed_data = json.loads(content_text)
         st.write(parsed_data)
 
