@@ -343,12 +343,17 @@ def parse_chart_notes_for_citations(response):
         response = model.generate_content([prompt])
 
         # Extract the parsed content as text
-        content_text = response.candidates[0].text.strip()  # Assuming text attribute contains the response
+        #content_text = response.candidates[0].text.strip()  # Assuming text attribute contains the response
+        content_text = response.candidates[0].content.parts[0].text.strip()
+       st.write("content_text")
+        st.write(content_text)
 
         # Parse the content into JSON (or a dictionary)
         parsed_data = json.loads(content_text)
 
         # Display parsed data
+        st.write("parsed_data")
+
         st.write(parsed_data)
 
         # Extract notes and citations from the parsed data
