@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import re
 import google.generativeai as genai
+import time
 
 # Retrieve the API key from secrets
 api_key = st.secrets["api_key"]
