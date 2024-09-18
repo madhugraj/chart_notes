@@ -300,14 +300,15 @@ def generate_chart_notes_with_citations(transcript, template):
         # Show elapsed time in seconds
         st.write(f"Time taken to generate the chart notes: {elapsed_time:.2f} seconds")
 
-        # Extract the content properly
+        # Check the response structure
         if hasattr(response, 'candidates') and response.candidates:
-            content_text = response.candidates[0].content.parts[0].text.strip()
+            content_text = response.candidates[0]['content'].strip()  # Assuming response is a dictionary
         else:
             st.warning("No response from the model. Please check the template or try again.")
             return None
 
         return content_text
+
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
