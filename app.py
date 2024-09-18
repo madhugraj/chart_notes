@@ -52,6 +52,7 @@ st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
 # Template definitions
 template_1 = """
+
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -103,7 +104,8 @@ The physician personally evaluated the patient and reviewed the history, physica
 **Scribe Acknowledgment:**  
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
 
-"""
+""" 
+
 template_2 = """ Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
 
@@ -262,7 +264,7 @@ Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
 Follow up
-"""
+"""  
 
 def extract_transcript_from_json(json_file):
     """Extract recognizedText from the JSON file."""
@@ -276,7 +278,6 @@ def extract_transcript_from_json(json_file):
     
     return transcript_text.strip()
 
-# Function to generate chart notes with a timer
 def generate_chart_notes_with_citations(transcript, template):
     """Generate chart notes with citations using the model."""
     prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
@@ -302,104 +303,17 @@ def generate_chart_notes_with_citations(transcript, template):
 
         # Check the response structure
         if hasattr(response, 'candidates') and response.candidates:
-            content_text = response.candidates[0].content.parts[0].text.strip()
+            content_text = response.candidates[0].content.strip()
+            return content_text
         else:
             st.warning("No response from the model. Please check the template or try again.")
             return None
-        #st.write(content_text)
-        return content_text
-
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
 
-
-def parse_chart_notes_for_citations_1(response):
-    """Parse the chart notes and citations from the generated response."""
-
-    # Define the prompt to generate structured content
-    prompt = f"""In the response {response}, you'll observe a structure with subheadings, notes, and references. 
-    Validate the notes and the references for correctness, remove filler words like 'yeah', 'okay', etc.
-    Eliminate unnecessary references and avoid repeated notes and references.
-    Retain critical and meaningful references and limit them to a maximum of 5 based on importance.
-    Please split the structure into a dictionary with the following format:
-    {{
-      "Subheading": "subheading text",
-      "Notes": [
-        {{
-          "note": "note text",
-          "Reference": [
-            "reference text 1",
-            "reference text 2"
-          ]
-        }},
-        ...
-      ]
-    }}
-
-    Response:
-    {response}
-    """
-
-    try:
-        # Generate the content using the model
-        generated_response = model.generate_content([prompt])
-
-        # Extract the parsed content as text
-        content_text = generated_response.candidates[0].content.parts[0].text.strip()
-
-        # Debugging: print raw content
-        st.write("Raw content_text received:")
-        st.write(content_text)
-
-        # Fix JSON formatting issues: check and clean raw content
-        content_text = content_text.strip()
-
-        # If the content starts with '{', it's likely a single dictionary, so wrap it in a list
-        if content_text.startswith("{"):
-            content_text = "[" + content_text + "]"
-
-        st.write("Formatted content_text:")
-        st.write(content_text)
-
-        # Parse the content into JSON (or a dictionary)
-        parsed_data = json.loads(content_text)
-
-        # Display parsed data for debugging
-        st.write(parsed_data)
-
-        # Extract notes and citations
-        notes = []
-        citations_dict = {}
-
-        for section in parsed_data:
-            subheading = section.get("Subheading", "")
-            for note_item in section.get("Notes", []):
-                note_text = note_item.get("note", "")
-                references = note_item.get("Reference", [])
-
-                # Collect notes
-                if note_text:
-                    notes.append(note_text)
-
-                # Collect citations for the note
-                if note_text and references:
-                    citations_dict[note_text] = references
-
-        return notes, citations_dict
-
-    except json.JSONDecodeError as e:
-        st.error(f"JSON parsing error: {str(e)}")
-        return None, None
-    except Exception as e:
-        st.error(f"An error occurred while parsing the response: {str(e)}")
-        return None, None
-
-  
 def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations from the generated response without subheadings."""
-
-    # Define the prompt to generate structured content
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
     Remove the subheadings, and retain only the important notes and their references.
     Eliminate filler words like 'yeah', 'okay', etc., and avoid repeated or unnecessary references.
@@ -426,27 +340,17 @@ def parse_chart_notes_for_citations(response):
         generated_response = model.generate_content([prompt])
 
         # Extract the parsed content as text
-        content_text = generated_response.candidates[0].content.parts[0].text.strip()
-
-        # Debugging: print raw content
-        st.write("Raw content_text received:")
-        st.write(content_text)
+        content_text = generated_response.candidates[0].content.strip()
 
         # Fix JSON formatting issues: check and clean raw content
         content_text = content_text.strip()
-
-        # Ensure the format is valid JSON (clean and load)
-        if content_text.startswith("{"):
+        
+        # Ensure the format is valid JSON
+        if not content_text.startswith("["):
             content_text = "[" + content_text + "]"
-
-        st.write("Formatted content_text:")
-        st.write(content_text)
 
         # Parse the content into JSON (or a dictionary)
         parsed_data = json.loads(content_text)
-
-        # Display parsed data for debugging
-        st.write(parsed_data)
 
         # Extract notes and citations
         notes = []
@@ -472,8 +376,6 @@ def parse_chart_notes_for_citations(response):
     except Exception as e:
         st.error(f"An error occurred while parsing the response: {str(e)}")
         return None, None
-
-    
 
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
@@ -555,29 +457,6 @@ if uploaded_file:
             selected_note = st.selectbox("Select a note to see its citation:", notes, key="note_dropdown")
             st.session_state.selected_note = selected_note
 
-            if selected_note and selected_note in st.session_state.citations_dict:
-                citations = st.session_state.citations_dict[selected_note]
-                for i, citation in enumerate(citations):
-                    st.text_area(f"Citation {i+1}", value=citation, height=100, key=f"citation_{i}")
-                
-                highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
+            if st.session_state.selected_note:
+                highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note)
                 transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
-            
-            # Download buttons
-            chart_notes_file = f"Chart_Notes.txt"
-            citations_file = f"Citations.txt"
-            
-            st.download_button(
-                label="Download Chart Notes",
-                data=st.session_state.chart_notes_with_citations,
-                file_name=chart_notes_file,
-                mime="text/plain"
-            )
-            
-            citations_text = "\n".join([f"{note}: {', '.join(citations)}" for note, citations in st.session_state.citations_dict.items()])
-            st.download_button(
-                label="Download Citations",
-                data=citations_text,
-                file_name=citations_file,
-                mime="text/plain"
-            )
