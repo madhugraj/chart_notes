@@ -408,8 +408,8 @@ def parse_chart_notes_for_citations(response):
     Please structure the output as:
     [
       {{
-        "note": "note text",
-        "Reference": [
+        "note":"note text",
+        "Reference":[
           "reference text 1",
           "reference text 2"
         ]
