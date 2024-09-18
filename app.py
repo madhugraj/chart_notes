@@ -295,47 +295,7 @@ def generate_chart_notes_with_citations(transcript, template):
         return None
 
 
-def parse_chart_notes_for_citations_1(response):
-    """Parse the raw response to extract sentences and associated citations."""
-    citation_pattern = re.compile(r'\{References: \[([^\]]+)\]\}')
-    notes = []
-    citations_dict = {}
 
-    try:
-        content_text = response.strip()  # Use the string response directly
-
-        # Extract all citation references
-        citations_raw = citation_pattern.findall(content_text)
-        st.write("Citations Dictionary:", citations_raw)
-        # Extract notes and their citations
-        for citation_block in citations_raw:
-            # Split citations by ', '
-            citation_entries = citation_block.split(', ')
-            # Iterate over each citation entry
-            for entry in citation_entries:
-                citation_number, citation_text = entry.split(': ', 1)
-                citation_number = citation_number.strip('[]')
-                citation_text = citation_text.strip('"')
-                
-                # Extract the note before the citation block
-                note_pattern = re.compile(rf'(.+?)(?=\{{References: \[{citation_number}\]: "{citation_text}"\}})')
-                note_match = note_pattern.search(content_text)
-                
-                if note_match:
-                    note_text = note_match.group(1).strip()
-                    if note_text and note_text not in notes:
-                        notes.append(note_text)
-                    if note_text:
-                        if note_text not in citations_dict:
-                            citations_dict[note_text] = []
-                        citations_dict[note_text].append(citation_text)
-
-    except AttributeError as e:
-        st.error(f"An error occurred while parsing the response: {str(e)}")
-        return notes, citations_dict
-    #st.write("Citations Dictionary:", st.session_state.citations_dict)
-
-    return notes, citations_dict
     
 def parse_chart_notes_for_citations(response):
     """Generate chart notes with citations using the model."""
@@ -367,6 +327,7 @@ def parse_chart_notes_for_citations(response):
         # Parse the response content into JSON
         content_text = response.candidates[0].content.strip()
         parsed_data = json.loads(content_text)
+        st.write(parsed_data)
 
         # Extract notes and citations from the parsed data
         notes = []
