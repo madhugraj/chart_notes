@@ -307,7 +307,7 @@ def generate_chart_notes_with_citations(transcript, template):
             content = response.candidates[0].content.parts[0].text.strip()
             if isinstance(content, str):
                 #content_text = content.strip()
-                return content_text
+                return content
             else:
                 st.warning("Response content is not a string. Content may not be properly formatted.")
                 return None
