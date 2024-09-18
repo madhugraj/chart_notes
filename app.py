@@ -317,8 +317,7 @@ def generate_chart_notes_with_citations(transcript, template):
 def parse_chart_notes_for_citations(response):
     """Generate chart notes with citations using the model."""
     # Define a prompt that guides the model to split the response into JSON format
-    prompt = f"""In the response {response}, you'll observe a structure with subheadings, notes, and references. Analyse the reference and notes for correct citation.
-    clean the reference by removing the filler words.
+    prompt = f"""In the response {response}, you'll observe a structure with subheadings, notes, and references. 
     Please split the structure into JSON with the following format:
     {{
       "Subheading": "subheading text",
@@ -342,12 +341,21 @@ def parse_chart_notes_for_citations(response):
         # Generate parsed content using the model
         response = model.generate_content([prompt])
 
+        # Extract and sanitize content_text
+        content_text = response.candidates[0].content.strip()
+
+        # Debugging output: Check raw content text
+        st.write(f"Raw content text before parsing: {repr(content_text)}")
+
+        # Sanitize and parse JSON
+        content_text = content_text.strip()
+        if not content_text:
+            st.error("Content is empty, cannot parse JSON.")
+            return None, None
+
         # Parse the response content into JSON
-        #content_text = response.candidates[0].content.strip()
-        content_text = response.candidates[0].content.parts[0].text.strip()
-        st.write(content_text)
         parsed_data = json.loads(content_text)
-        #st.write(parsed_data)
+        st.write(parsed_data)
 
         # Extract notes and citations from the parsed data
         notes = []
@@ -368,6 +376,14 @@ def parse_chart_notes_for_citations(response):
                     citations_dict[note_text] = references
 
         return notes, citations_dict
+
+    except json.JSONDecodeError as e:
+        st.error(f"An error occurred while parsing the response: {str(e)}")
+        st.write(f"Content that failed to parse: {repr(content_text)}")
+        return None, None
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {str(e)}")
+        return None, None
 
     except Exception as e:
         st.error(f"An error occurred while parsing the response: {str(e)}")
