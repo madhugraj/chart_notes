@@ -41,6 +41,15 @@ st.markdown(
         background-color: gold;
         margin-bottom: 20px;
     }
+    .note-dropdown {
+        color: white;
+        background-color: #005f40;
+        border: 1px solid #004d33;
+        padding: 5px;
+    }
+    .dropdown-container {
+        margin-bottom: 20px;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -52,9 +61,217 @@ st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
 # Template definitions
 template_1 = """
+**Chief Complaint**
+
+**Reason for Visit (Summary/Chief Complaint):**  
+A brief summary of the reason for the visit, including relevant past medical and surgical history, social history, family history, and any associated notes or documents.
+
+**History, Assessment, and Plans By Problem:**  
+Details of the problem description and associated information.
+
+**Preventative Care Summary:**  
+Preventative care items were reviewed, including their status, the due dates, and the completion dates. The health maintenance was reviewed and updated.
+
+**Labs & Screening:**  
+Details of the reviewed and ordered labs and screenings.
+
+**Social Screening:**  
+Updates on the patient’s social history and any relevant information.
+
+**Encounter for [Specific Encounter]:**  
+Description of the encounter, including any ordered tests or referrals.
+
+**[Specific Problem/Condition]:**  
+Details of the problem or condition, including associated information, prescribed treatments, or recommendations.
+
+**Review of System:**  
+For the respiratory system, gastrointestinal system, neurological system, and additional systems as needed, details were noted.
+
+**Physical Examination:**  
+Vital signs recorded include the date, time, blood pressure, pulse, respiration, temperature, temperature source, SpO2, weight, and height. The examination included the following:
+
+- **Constitutional:** Relevant details.
+- **ENT:** Relevant details.
+- **Neck:** Relevant details.
+- **Respiratory:** Relevant details.
+- **Cardiovascular:** Relevant details.
+- **Abdomen:** Relevant details.
+- **Psychiatric:** Relevant details.
+- **Skin:** Relevant details.
+- **Neurologic:** Relevant details.
+
+**Current Outpatient Medications:**  
+The patient is currently taking medications with specific instructions provided for each. There are no facility-administered medications for this visit. No follow-up appointments are on file.
+
+**Patient Education:**  
+The patient expressed understanding of the care plan, with details about the understanding and any provided documentation.
+
+**Signature and Notes:**  
+The physician personally evaluated the patient and reviewed the history, physical examination, assessment, and plan as documented by the scribe, [Scribe Name]. Significant findings and changes have been incorporated into the note as needed. Permission to use a virtual scribe was obtained during the encounter by clinical staff.
+
+**Scribe Acknowledgment:**  
+The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
+
 """ 
 
-template_2 = """ HHistorian-
+template_2 = """ Historian-
+Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
+
+CHIEF COMPLAINT- 
+The chief complaint includes:
+1.AGE , GENDER, TYPE OF VISIT,  
+2.REASON FOR VISIT- FIRST TIME COMPLAINT/ PROBLEM/ SYMPTOM- ACUTE/ SICK VISIT- evaluation
+VISITS FOR F/U OR PERIODIC CHECK-UP OF DIAGNOSED CONDITION/ DISEASE -FOLLOW-UP VISIT
+
+HAP-
+This section combines the patient’s history, the provider’s assessment, and the treatment plan in one place.
+
+(HPI) HISTORY OF PRESENTING ILLNESS- 
+The HPI is a detailed account of the patient's reason for the visit. It must be written in simple present tense, in paragraph form, and include the following information:
+Side effects/ benefits of medication.
+Ongoing medications.
+Diet/ lifestyle adherence.
+Reasons for non-adherence.
+Previous reports discussion. 
+Associated sign and symptoms
+Allergies/ family history/ social history/ past medical history/ travel history.
+Immunization history.
+Request for refills of medication OR reducing the dosage of meds OR referrals to specialists.
+Upcoming Appt with other specialty.s
+It must be in SIMPLE PRESENT TENSE.
+The HPI is a chronological description.
+The following eight elements may be used to characterize a specific somatic complaint. They are as follows:
+Location,Quality,Severity,Duration,Timing,Context,Modifying Factors,Associated Signs and Symptoms.
+Example: 
+Location: Where is the pain/problem? (abdomen, chest, )
+
+Quality: Describe the pain/problem? (sharp, dull)
+
+Severity: How severe is the pain /problem? (slight, Mild, Moderate, Severe, Rates her pain as 3 on a scale of 10, 5 on a scale of 10)
+
+Duration: How long have you had this pain/problem? When did it start? (Two weeks, started after I returned from my trip abroad)
+
+Timing: If the pain or problem is constant or comes and goes or Does the /problem occur at a specific time? (one hour after eating, Experiences heartburn especially at night, intermittent runny nose, constant headache)
+
+Context: Where were you at the onset of this pain/problem? (Complaints of sudden onset of chest pain. Abdominal pain started after eating a pizza. He tripped and fell which playing soccer and sustained injury to the left leg. )
+
+Modifying Factors: What makes the pain/problem worse or better? (improves when lying down, worse after eating, Abdominal pain was better after taking an antacid, His left leg swelling improved after applying an ice pack)
+
+Associated Signs/Symptoms: What other associated problems are present? (nausea and vomiting, rash, leg swelling)
+HPI always in paragraph form.
+
+
+If a patient has visited for a old problem then the HPI element will have : Current status of the problem and other new problem(if any)
+If a patient has visited for a new problem then the HPI element will have : above given 8 elements.
+HPI will be noted 99% of the time from audio and 1% from EHR.
+Any suspicious point in the audio from the patient will be an inquiry for the provider.
+Account specifications or physician preferences that could be encountered
+Do not use the words mentions, states, and reports
+Start the sentence with the subject (He, she)
+Write all the things the patient discusses with the physician
+There are two coding levels of HPI:
+Brief
+Extended
+Brief HPI: A brief HPI includes documentation of one to three HPI elements.
+CC: Left ear pain
+HPI: Complains of dull ache in left ear for 2 days. 
+In this example, only three HPI elements are documented. 
+Complaints of dull ache (Quality) in left ear (Location) for 2 days(Duration).
+Extended HPI: Should describe at least four elements of the present HPI or the status of at least three chronic or inactive conditions.
+Hypertension: Her blood pressure today is 120/80 mmHg. 
+Diabetes: She is currently on Metformin. States that her glucose levels are better after losing few pounds with high protein diet. 
+Hypothyroidism: She is currently on Synthroid.  Her recent TSH levels are within normal limits. 
+Right thyroid cancer: Status post right thyroidectomy
+Right ear hearing loss: She states that her hearing in the right ear has gotten worse.
+
+
+
+(ROS) Review of system- 
+
+It’s an inventory of the body systems that is obtained through a series of questions in order to identify signs and/or symptoms which the patient may be experiencing. Designed to uncover dysfunction and disease. 
+ROS entries are always symptoms.  They can never be disease conditions
+ROS entries are given by the patient when asked by the physician (answers to leading questions / yes or no answers)
+Both positive and negative  findings are documented. This questionnaire is mostly contextual based.
+There are 14 recognized systems:
+1.Constitutional (fevers, chills, night sweats, weight loss, weight gain, change in appetite, fatigue, somnolence)
+2.Eyes (Vision loss or blurred vision, double vision/diplopia, eye pain, red eye)
+3.Ears/Nose/Mouth/Throat (Ear pain, ear discharge, hearing loss, tinnitus, epistaxis, rhinorrhea or post nasal discharge, sinus pressure, sore throat, oral sores/lesions, tooth pain, bleeding gums, hoarseness, neck pain)
+4.Cardiovascular (Chest pain, palpitations, leg swelling/edema, leg pain with walking/claudication)
+5.Respiratory (Cough, hemoptysis, wheezing, snoring, shortness of breath [dyspnea, orthopnea, PND])
+6.Gastrointestinal (Nausea or vomiting, diarrhea, constipation, abdominal pain, hematochezia, melana, stool incontinence [encopresis])
+7.Genitourinary (Pelvic pain, dysuria, urinary frequency, urinary urgency, hematuria, incomplete bladder emptying, incontinence, STD) (Men – Testicular pain, Swelling in scrotum, ED)(Women – LMP, menorrhagia, metorrhagia, postmenopausal bleeding, dysmenorrhea, vaginal discharge)
+8.Musculoskeletal (Bone pain, joint pain, joint swelling, muscle pain)
+9.Integumentary (skin and/or breast) (Skin lesions, pruritus, breast lumps, mastalgia, galactorrhea, alopecia)
+10.Neurological (Headache, muscle weakness, paresthesia, memory loss, seizure, dizziness in the forms of lightheadedness, room spinning(vertigo), fainting(syncope), imbalance (ataxaia)
+11.Psychiatric (Anxiety, depression, irritability, insomnia, suicidal)
+12.Endocrine (Heat or cold intolerance, excessive thirst/polydipsia, excessive hunger/polyphagia)
+13.Hematologic/Lymphatic (Lymph node enlargement, easy bruising or bleeding)
+14.Allergic/Immunologic (Hives, seasonal allergies, environmental allergies, exposure to HIV)
+
+better assessment/ diagnosis. Rule out other probable disorder.
+Leading Questions asked by the physician to the patient.
+Qualifying factors
+The question should be asked by the physician and the ans should be given by the patient.
+It should be either a sign or symptom and not a disorder, diet, habit, lifestyle etc.
+It should be about the present situation and not belong to the past.
+If No leading question by the physician. – Replicate one symptom from the HPI in ROS section.
+If No leading question is asked and no symptoms are discussed in the HPI-
+Leave the ROS blank.
+
+
+(PE) Physical examination - 
+PE entries are always findings called out by the physician.
+PE entries are always documented using medical terms.
+Examinations performed by the physician on the patient during that day of visit. Examining the body systems.
+It is either a measurement or an observation.
+Vitals measured by the physician are documented in PE summary
+In case the vitals are related to the chief complaint (eg: BP reading for a hypertensive patient), they are documented in PE summary and in HPI.
+
+
+Plan - 
+
+Treatment plan called out by the primary care provider  (PCP)/  physician - for the present day’s visit.
+
+Referral to specialty. Referred to MGH orthopedic surgeon for further evaluation and management.
+Continue the existing meds/ Discontinue/ Increase or decrease the dosages.
+Prescribed new medication. Eg Prescribed Lisinopril 40 mg one tablet every day in the morning after breakfast. Side effects of lightheadedness and dizziness explained.
+Taboo- twice/ thrice 
+Prescribed / OTC (over the counter)
+
+
+Continued OTC Isabgol one tablespoon every day at night.
+Continued OTC Tylenol 1-2 tablets.
+
+Follow up 
+Advised to follow up after five days or sooner if required.
+
+Current status- Follow up case- 
+Currently, the condition is controlled or managed with the current medications.
+Currently, the condition is poorly controlled / minimally controlled.
+No improvement.
+
+Plan is documented using medical terms.
+Avoid “advised” for medications and tests.  Use “recommended” instead
+Use “prescribed” for prescribed medications
+Use “ordered” for lab tests and medications
+Use “educated on” for any patient education
+Below are 2 different Visits and the plan for them, SEQUENCE HAS TO BE FOLLOWED.
+
+It must be in Past tense.
+
+
+Patient education-
+
+Food and lifestyle suggestion 
+Explained the pathophysiology of the condition.
+Explained/ Educated on the complications of the condition.
+Orders and advise.
+“Reviewed & discussed the [reports] in detail”
+Lab orders / investigation
+Refill / “Continued current medication” / Prescription/ Change in dosage
+Patient education
+Referral
+Follow up
 """  
 
 def extract_transcript_from_json(json_file):
@@ -232,42 +449,53 @@ if uploaded_file:
             # Add download buttons
             st.download_button(
                 label="Download Chart Notes with References",
-                data=json.dumps({"chart_notes": response}),
-                file_name="chart_notes_with_references.json",
-                mime="application/json"
+                data=st.session_state.chart_notes_with_citations,
+                file_name="chart_notes_with_references.txt",
+                mime="text/plain"
             )
 
-            chart_notes_without_references = re.sub(r'\[\d+\]: ".*?"', '', response)
+            chart_notes_without_references = re.sub(r'\[\d+\]: ".*?"', '', st.session_state.chart_notes_with_citations)
             st.download_button(
                 label="Download Chart Notes without References",
-                data=json.dumps({"chart_notes": chart_notes_without_references}),
-                file_name="chart_notes_without_references.json",
-                mime="application/json"
+                data=chart_notes_without_references,
+            chart_notes_without_references = re.sub(r'\[\d+\]: ".*?"', '', st.session_state.chart_notes_with_citations)
+            st.download_button(
+                label="Download Chart Notes without References",
+                data=chart_notes_without_references,
+                file_name="chart_notes_without_references.txt",
+                mime="text/plain"
             )
 
-    if st.session_state.get("notes", []):
-        col1, col2 = st.columns(2)
+# Move the "Select a note" dropdown to the top of the columns
+st.markdown('<div class="dropdown-container">', unsafe_allow_html=True)
 
-        with col1:
-            st.subheader("Transcript")
-            transcript_area = st.empty()
-            transcript_area.markdown(st.session_state.transcript, unsafe_allow_html=True)
+if st.session_state.notes:
+    selected_note = st.selectbox(
+        "Select a note to see its citation:",
+        options=st.session_state.notes,
+        format_func=lambda note: note[:50] + '...' if len(note) > 50 else note,
+        key="selected_note",
+        help="Select a note from the generated chart notes to see the corresponding highlighted citations."
+    )
+    st.session_state.selected_note = selected_note
 
-        with col2:
-            st.subheader("Generated Chart Notes")
-            st.text_area("Chart Notes", value=st.session_state.chart_notes_with_citations, height=300, key="chart_notes_display")
+st.markdown('</div>', unsafe_allow_html=True)
 
-            # Dropdown for note selection
-            selected_note = st.selectbox("Select a note to see its citation:", st.session_state.notes, key="note_dropdown")
-            st.session_state.selected_note = selected_note
+# Display transcript and chart notes in columns
+col1, col2 = st.columns(2)
 
-            # Check if a note is selected and update the transcript with highlights
-            if st.session_state.selected_note:
-                highlighted_transcript = highlight_citations(
-                    st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note
-                )
-                # Re-render the transcript with highlighted citations
-                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
+with col1:
+    st.markdown("### Transcript")
+    if st.session_state.transcript:
+        highlighted_transcript = highlight_citations(
+            st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note
+        )
+        st.markdown(f"<div>{highlighted_transcript}</div>", unsafe_allow_html=True)
 
-        # Divider line
-        st.markdown("<hr>", unsafe_allow_html=True)
+with col2:
+    st.markdown("### Generated Chart Notes")
+    if st.session_state.chart_notes_with_citations:
+        st.text(st.session_state.chart_notes_with_citations)
+
+# Divider between columns
+st.markdown('<hr style="border:1px solid black;">', unsafe_allow_html=True)
