@@ -320,9 +320,10 @@ def parse_chart_notes_for_citations(response):
     #st.write(response)
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
     Remove the subheadings, and retain only the important notes and their references.
-    Eliminate filler words like 'yeah', 'okay', etc., and avoid repeated or unnecessary references.
-    Ensure that each note has no more than 5 key references.
-    
+    Avoide Notes without reference.
+    Aviode repetions and limit to 5 key, contexually important references only.
+    Eliminate filler words like 'um' ,'yeah', 'okay', etc.,
+        
     Please structure the output as:
     [
       {{
