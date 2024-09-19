@@ -337,10 +337,7 @@ def parse_chart_notes_for_citations(response):
           "reference text 4",
           "reference text 5"
         ]
-      }},
-      ...
-    ]
-    
+      }}]
     Response:
     {response}
     """
@@ -369,7 +366,6 @@ def parse_chart_notes_for_citations(response):
         citations_dict = {}
 
         for note, raw_ref in zip(notes, raw_references):
-            # Split references and clean up any unnecessary characters
             references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
             
             # Limit to 5 references
@@ -454,8 +450,7 @@ if uploaded_file:
                 mime="text/plain"
             )
 
-
-            chart_notes_without_references = re.sub(r'\[\d+\]: ".*?"', '', st.session_state.chart_notes_with_citations)
+            chart_notes_without_references = re.sub(r'{References:\s*\[\d+\]:\s*".*?"}', '', st.session_state.chart_notes_with_citations)
             st.download_button(
                 label="Download Chart Notes without References",
                 data=chart_notes_without_references,
@@ -464,14 +459,11 @@ if uploaded_file:
             )
 
 # Set up a default value for `selected_note` before the selectbox is created
-if "selected_note" not in st.session_state:
-    st.session_state.selected_note = st.session_state.notes[0] if st.session_state.notes else ""
+if st.session_state.notes and "selected_note" not in st.session_state:
+    st.session_state.selected_note = st.session_state.notes[0]
 
-# Move the "Select a note" dropdown to the top of the columns
-st.markdown('<div class="dropdown-container">', unsafe_allow_html=True)
-
+# Move the "Select a note" dropdown to the top
 if st.session_state.notes:
-    # Dropdown for note selection, setting session_state on select
     selected_note = st.selectbox(
         "Select a note to see its citation:",
         options=st.session_state.notes,
@@ -480,24 +472,16 @@ if st.session_state.notes:
         help="Select a note from the generated chart notes to see the corresponding highlighted citations."
     )
 
-    # Assign the selected note to session_state before rendering
-    st.session_state.selected_note = selected_note
+    # Highlight the selected note's citations in the transcript
+    highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Display transcript and chart notes in columns
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown("### Transcript")
-    if st.session_state.transcript:
-        # Highlight citations based on the selected note
-        highlighted_transcript = highlight_citations(
-            st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note
-        )
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Transcript")
         st.markdown(f"<div>{highlighted_transcript}</div>", unsafe_allow_html=True)
+    
+    with col2:
+        st.subheader("Generated Chart Notes")
+        st.markdown(st.session_state.chart_notes_with_citations)
 
-with col2:
-    st.markdown("### Generated Chart Notes")
-    if st.session_state.chart_notes_with_citations:
-        st.text_area("Chart Notes", value=st.session_state.chart_notes_with_citations, height=300)
