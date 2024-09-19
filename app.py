@@ -453,7 +453,7 @@ if uploaded_file:
     notes = st.session_state.get("notes", [])
     
     if st.session_state.get("notes", []):
-    col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("Transcript")
