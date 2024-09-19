@@ -324,8 +324,8 @@ def parse_chart_notes_for_citations(response):
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
     1. Avoid Notes without reference.
     2. Each note is permitted to have a maximum of 5 key (critical) references.
-    3. Strictly Eliminate stop words and conjunctions
-    4. Do not refer any filler words like 'so','um', 'yeah', 'okay','well','thank you', 'hello','just','you know'etc.
+    3. Strictly Eliminate STOP WORDS and CONJUCTIONS
+    4. Remove filler words like 'so','um', 'yeah', 'okay','well','thank you', 'hello','just','you know'etc, as they are not necessary.
     4. Repeat this for all the subheadings.
     
     5. Structure the output as:
@@ -345,37 +345,39 @@ def parse_chart_notes_for_citations(response):
     """
 
     try:
-        # Generate the content using the model
-        generated_response = model.generate_content([prompt])
+        with st.spinner('Parsing chart notes for citations...'):
+            # Generate the content using the model
+            generated_response = model.generate_content([prompt])
 
-        # Extract the parsed content as text
-        content_text = generated_response.candidates[0].content.parts[0].text.strip()
+            # Extract the parsed content as text
+            content_text = generated_response.candidates[0].content.parts[0].text.strip()
 
-        # Check if content_text is empty
-        if not content_text:
-            st.error("Generated content is empty.")
-            return None, None
+            # Check if content_text is empty
+            if not content_text:
+                st.error("Generated content is empty.")
+                return None, None
 
-        # Regex pattern to match notes and references
-        note_pattern = r'"note":\s*"([^"]+)"'
-        reference_pattern = r'"Reference":\s*\[\s*([^]]+)\s*\]'
+            # Regex pattern to match notes and references
+            note_pattern = r'"note":\s*"([^"]+)"'
+            reference_pattern = r'"Reference":\s*\[\s*([^]]+)\s*\]'
 
-        # Find all notes
-        notes = re.findall(note_pattern, content_text)
+            # Find all notes
+            notes = re.findall(note_pattern, content_text)
+            st.write("Parsed notes:", notes)  # Debug statement
 
-        # Find all references and split them into individual references
-        raw_references = re.findall(reference_pattern, content_text)
-        citations_dict = {}
+            # Find all references and split them into individual references
+            raw_references = re.findall(reference_pattern, content_text)
+            citations_dict = {}
 
-        for note, raw_ref in zip(notes, raw_references):
-            references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
-            
-            # Limit to 5 references
-            citations_dict[note] = references[:5]
-        
-        st.write("Generated citations_dict:", citations_dict)
+            for note, raw_ref in zip(notes, raw_references):
+                references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
+                
+                # Limit to 5 references
+                citations_dict[note] = references[:5]
 
-        return notes, citations_dict
+            st.write("Generated citations_dict:", citations_dict)  # Debug statement
+
+            return notes, citations_dict
 
     except Exception as e:
         st.error(f"An error occurred while processing the response: {str(e)}")
@@ -439,14 +441,14 @@ if uploaded_file:
     if st.button("Generate Chart Notes"):
         response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
         if response:
-            notes, citations_dict = parse_chart_notes_for_citations(response)
-            
-            st.session_state.chart_notes_with_citations = response
-            st.session_state.notes = notes
-            st.session_state.citations_dict = citations_dict
+            with st.spinner('Parsing chart notes for citations...'):
+                notes, citations_dict = parse_chart_notes_for_citations(response)
+                
+                st.session_state.chart_notes_with_citations = response
+                st.session_state.notes = notes
+                st.session_state.citations_dict = citations_dict
 
-            # Always show the download buttons
-            if st.session_state.chart_notes_with_citations or st.session_state.notes:
+                # Add download buttons
                 st.download_button(
                     label="Download Chart Notes with References",
                     data=st.session_state.chart_notes_with_citations,
@@ -454,26 +456,41 @@ if uploaded_file:
                     mime="text/plain"
                 )
 
+                chart_notes_without_references = re.sub(r'{References:\s*\[\d+\]:\s*".*?"}', '', st.session_state.chart_notes_with_citations)
                 st.download_button(
                     label="Download Chart Notes without References",
-                    data=" ".join(st.session_state.notes),
+                    data=chart_notes_without_references,
                     file_name="chart_notes_without_references.txt",
                     mime="text/plain"
                 )
 
-    # Dropdown for selecting notes
-    if st.session_state.notes:
-        selected_note = st.selectbox(
-            "Select a note to see its citation:",
-            st.session_state.notes,
-            key="note_dropdown",
-            format_func=lambda x: x
-        )
+# Set up a default value for `selected_note` before the selectbox is created
+if st.session_state.notes and "selected_note" not in st.session_state:
+    st.session_state.selected_note = st.session_state.notes[0]
 
-        st.session_state.selected_note = selected_note
+# Move the "Select a note" dropdown to the top
+if st.session_state.notes:
+    selected_note = st.selectbox(
+        "Select a note to see its citation:",
+        options=st.session_state.notes,
+        format_func=lambda note: note[:50] + '...' if len(note) > 50 else note,
+        key="selected_note",
+        help="Select a note from the generated chart notes to see the corresponding highlighted citations."
+    )
 
-        # Highlight citations based on the selected note
-        highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
-        
-        # Display the highlighted transcript
-        st.markdown(f'<div style="color: white;">{highlighted_transcript}</div>', unsafe_allow_html=True)
+    # Debug statement to check the selected note and citations_dict
+    st.write(f"Selected Note: {selected_note}")
+    st.write(f"Citaitons Dict: {st.session_state.citations_dict}")
+
+    # Highlight the selected note's citations in the transcript
+    highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
+
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Transcript")
+        st.markdown(f"<div>{highlighted_transcript}</div>", unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<h2 style="color: green;">Generated Chart Notes</h2>', unsafe_allow_html=True)
+        st.markdown(f"<div style='color: green;'>{st.session_state.chart_notes_with_citations}</div>", unsafe_allow_html=True)
