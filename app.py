@@ -4,7 +4,7 @@ import re
 import google.generativeai as genai
 import time
 
-#st. set_page_config(layout="wide") 
+# st.set_page_config(layout="wide")
 # Retrieve the API key from secrets
 api_key = st.secrets["api_key"]
 genai.configure(api_key=api_key)
@@ -59,11 +59,12 @@ st.markdown(
 # Display heading with color bar
 st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
-#st. set_page_config(layout="wide") 
-#st.session_state.theme = "dark"
+# st.set_page_config(layout="wide") 
+# st.session_state.theme = "dark"
 
 # Template definitions
 template_1 = """
+
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -275,6 +276,7 @@ Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
 Follow up
+
 """  
 
 def extract_transcript_from_json(json_file):
@@ -322,7 +324,6 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations using regex.""" 
-    
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
     1. Avoid Notes without reference.
@@ -348,37 +349,38 @@ def parse_chart_notes_for_citations(response):
     """
 
     try:
-        # Generate the content using the model
-        generated_response = model.generate_content([prompt])
+        with st.spinner('Parsing chart notes for citations...'):
+            # Generate the content using the model
+            generated_response = model.generate_content([prompt])
 
-        # Extract the parsed content as text
-        content_text = generated_response.candidates[0].content.parts[0].text.strip()
+            # Extract the parsed content as text
+            content_text = generated_response.candidates[0].content.parts[0].text.strip()
 
-        # Check if content_text is empty
-        if not content_text:
-            st.error("Generated content is empty.")
-            return None, None
+            # Check if content_text is empty
+            if not content_text:
+                st.error("Generated content is empty.")
+                return None, None
 
-        # Regex pattern to match notes and references
-        note_pattern = r'"note":\s*"([^"]+)"'
-        reference_pattern = r'"Reference":\s*\[\s*([^]]+)\s*\]'
+            # Regex pattern to match notes and references
+            note_pattern = r'"note":\s*"([^"]+)"'
+            reference_pattern = r'"Reference":\s*\[\s*([^]]+)\s*\]'
 
-        # Find all notes
-        notes = re.findall(note_pattern, content_text)
+            # Find all notes
+            notes = re.findall(note_pattern, content_text)
 
-        # Find all references and split them into individual references
-        raw_references = re.findall(reference_pattern, content_text)
-        citations_dict = {}
+            # Find all references and split them into individual references
+            raw_references = re.findall(reference_pattern, content_text)
+            citations_dict = {}
 
-        for note, raw_ref in zip(notes, raw_references):
-            references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
+            for note, raw_ref in zip(notes, raw_references):
+                references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
+                
+                # Limit to 5 references
+                citations_dict[note] = references[:5]
             
-            # Limit to 5 references
-            citations_dict[note] = references[:5]
-        
-        st.write("Generated citations_dict:", citations_dict)
+            st.write("Generated citations_dict:", citations_dict)
 
-        return notes, citations_dict
+            return notes, citations_dict
 
     except Exception as e:
         st.error(f"An error occurred while processing the response: {str(e)}")
@@ -442,27 +444,28 @@ if uploaded_file:
     if st.button("Generate Chart Notes"):
         response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
         if response:
-            notes, citations_dict = parse_chart_notes_for_citations(response)
-            
-            st.session_state.chart_notes_with_citations = response
-            st.session_state.notes = notes
-            st.session_state.citations_dict = citations_dict
+            with st.spinner('Parsing chart notes for citations...'):
+                notes, citations_dict = parse_chart_notes_for_citations(response)
+                
+                st.session_state.chart_notes_with_citations = response
+                st.session_state.notes = notes
+                st.session_state.citations_dict = citations_dict
 
-            # Add download buttons
-            st.download_button(
-                label="Download Chart Notes with References",
-                data=st.session_state.chart_notes_with_citations,
-                file_name="chart_notes_with_references.txt",
-                mime="text/plain"
-            )
+                # Add download buttons
+                st.download_button(
+                    label="Download Chart Notes with References",
+                    data=st.session_state.chart_notes_with_citations,
+                    file_name="chart_notes_with_references.txt",
+                    mime="text/plain"
+                )
 
-            chart_notes_without_references = re.sub(r'{References:\s*\[\d+\]:\s*".*?"}', '', st.session_state.chart_notes_with_citations)
-            st.download_button(
-                label="Download Chart Notes without References",
-                data=chart_notes_without_references,
-                file_name="chart_notes_without_references.txt",
-                mime="text/plain"
-            )
+                chart_notes_without_references = re.sub(r'{References:\s*\[\d+\]:\s*".*?"}', '', st.session_state.chart_notes_with_citations)
+                st.download_button(
+                    label="Download Chart Notes without References",
+                    data=chart_notes_without_references,
+                    file_name="chart_notes_without_references.txt",
+                    mime="text/plain"
+                )
 
 # Set up a default value for `selected_note` before the selectbox is created
 if st.session_state.notes and "selected_note" not in st.session_state:
