@@ -4,6 +4,7 @@ import re
 import google.generativeai as genai
 import time
 
+st. set_page_config(layout="wide") 
 # Retrieve the API key from secrets
 api_key = st.secrets["api_key"]
 genai.configure(api_key=api_key)
