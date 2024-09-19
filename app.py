@@ -319,12 +319,13 @@ def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations from the generated response without subheadings."""
     #st.write(response)
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
-    Remove the subheadings, and retain only the important notes and their references.
-    Avoide Notes without reference.
-    Aviode repetions and limit to 5 key, contexually important references only.
-    Eliminate filler words like 'um' ,'yeah', 'okay', etc.,
+    Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
+    1. Avoide Notes without reference.
+    2. Aviode repetions and limit to 5 key contexually important references per notes.
+    3. Eliminate filler words like 'um' ,'yeah', 'okay', etc.,
+    4. Repeate this for all the subheadings.
         
-    Please structure the output as:
+    5. Do structure the output as:
     [
       {{
         "note":"note text",
