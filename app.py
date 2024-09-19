@@ -4,7 +4,7 @@ import re
 import google.generativeai as genai
 import time
 
-st. set_page_config(layout="wide") 
+#st. set_page_config(layout="wide") 
 # Retrieve the API key from secrets
 api_key = st.secrets["api_key"]
 genai.configure(api_key=api_key)
@@ -59,7 +59,7 @@ st.markdown(
 # Display heading with color bar
 st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
-st. set_page_config(layout="wide") 
+#st. set_page_config(layout="wide") 
 #st.session_state.theme = "dark"
 
 # Template definitions
