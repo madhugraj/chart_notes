@@ -446,7 +446,7 @@ if uploaded_file:
         if response:
             with st.spinner('Parsing chart notes for citations...'):
                 notes, citations_dict = parse_chart_notes_for_citations(response)
-                
+                st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
                 st.session_state.chart_notes_with_citations = response
                 st.session_state.notes = notes
                 st.session_state.citations_dict = citations_dict
@@ -497,4 +497,4 @@ if st.session_state.notes:
     with col2:
         st.markdown('<h2 style="color: green;">Generated Chart Notes</h2>', unsafe_allow_html=True)
         st.markdown(f"<div style='color: green;'>{st.session_state.chart_notes_with_citations}</div>", unsafe_allow_html=True)
-        st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
