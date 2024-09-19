@@ -323,7 +323,8 @@ def parse_chart_notes_for_citations(response):
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
     1. Avoid Notes without reference.
     2. Each note is permitted to have a maximum of 5 key (critical) references.
-    3. Strictly Eliminate stop words and filler words like 'um', 'yeah', 'okay','well','thank you', 'hello','just','you know','you know' etc.
+    3. Strictly Eliminate stop words 
+    4. Do not refer any filler words like 'um', 'yeah', 'okay','well','thank you', 'hello','just','you know'etc.
     4. Repeat this for all the subheadings.
     
     5. Structure the output as:
