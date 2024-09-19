@@ -300,6 +300,7 @@ def generate_chart_notes_with_citations(transcript, template):
             end_time = time.time()
             elapsed_time = end_time - start_time
             st.write(f"Time taken to generate the chart notes: {elapsed_time:.2f} seconds")
+            st.write("Generating Citations...")
 
             if hasattr(response, 'candidates') and response.candidates:
                 candidate = response.candidates[0]
@@ -323,8 +324,8 @@ def parse_chart_notes_for_citations(response):
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
     1. Avoid Notes without reference.
     2. Each note is permitted to have a maximum of 5 key (critical) references.
-    3. Strictly Eliminate stop words 
-    4. Do not refer any filler words like 'um', 'yeah', 'okay','well','thank you', 'hello','just','you know'etc.
+    3. Strictly Eliminate stop words and conjunctions
+    4. Do not refer any filler words like 'so','um', 'yeah', 'okay','well','thank you', 'hello','just','you know'etc.
     4. Repeat this for all the subheadings.
     
     5. Structure the output as:
@@ -390,13 +391,14 @@ def highlight_citations(transcript, citations_dict, selected_note):
 
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text.strip())
-            # Ensure highlighting is done in a case-insensitive manner
+            # Ensure highlighting is done in a case-insensitive manner, but only for the first occurrence
             highlighted_transcript = re.sub(
                 citation_text_escaped,
                 f"<mark style='background-color: yellow'>{citation_text.strip()}</mark>",
                 highlighted_transcript,
+                count=1,  # Only replace the first occurrence
                 flags=re.IGNORECASE
-            )
+            )           
 
     return highlighted_transcript
 
@@ -424,7 +426,7 @@ with st.expander("View Selected Template", expanded=False):
     st.text(st.session_state.selected_template)
 
 # Upload file
-uploaded_file = st.file_uploader("Upload a TXT or JSON file containing the transcript", type=["json", "txt"])
+uploaded_file = st.file_uploader("Upload a file containing the transcript", type=["json", "txt"])
 
 if uploaded_file:
     if uploaded_file.type == "application/json":
@@ -484,5 +486,7 @@ if st.session_state.notes:
     
     with col2:
         st.subheader("Generated Chart Notes")
-        st.markdown(st.session_state.chart_notes_with_citations)
+        #st.markdown(st.session_state.chart_notes_with_citations)
+        st.markdown(f"<div style='color: blue;'>{st.session_state.chart_notes_with_citations}</div>", 
+        unsafe_allow_html=True)
 
