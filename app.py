@@ -176,8 +176,6 @@ Hypothyroidism: She is currently on Synthroid.  Her recent TSH levels are within
 Right thyroid cancer: Status post right thyroidectomy
 Right ear hearing loss: She states that her hearing in the right ear has gotten worse.
 
-
-
 (ROS) Review of system- 
 
 It’s an inventory of the body systems that is obtained through a series of questions in order to identify signs and/or symptoms which the patient may be experiencing. Designed to uncover dysfunction and disease. 
@@ -210,7 +208,6 @@ If No leading question by the physician. – Replicate one symptom from the HPI 
 If No leading question is asked and no symptoms are discussed in the HPI-
 Leave the ROS blank.
 
-
 (PE) Physical examination - 
 PE entries are always findings called out by the physician.
 PE entries are always documented using medical terms.
@@ -218,7 +215,6 @@ Examinations performed by the physician on the patient during that day of visit.
 It is either a measurement or an observation.
 Vitals measured by the physician are documented in PE summary
 In case the vitals are related to the chief complaint (eg: BP reading for a hypertensive patient), they are documented in PE summary and in HPI.
-
 
 Plan - 
 
@@ -305,7 +301,7 @@ def generate_chart_notes_with_citations(transcript, template):
         if hasattr(response, 'candidates') and response.candidates:
             #content = response.candidates[0].content
             content = response.candidates[0].content.parts[0].text.strip()
-            st.write(content)
+            #st.write(content)
             if isinstance(content, str):
                 #content_text = content.strip()
                 return content
@@ -347,11 +343,12 @@ def parse_chart_notes_for_citations(response):
         generated_response = model.generate_content([prompt])
 
         # Extract the parsed content as text
-        content_text = generated_response.candidates[0].content.strip()
+        #content_text = generated_response.candidates[0].content.strip()
+        content_text = response.candidates[0].content.parts[0].text.strip()
         st.write(content_text)
 
         # Fix JSON formatting issues: check and clean raw content
-        content_text = content_text.strip()
+        #content_text = content_text.strip()
         
         # Ensure the format is valid JSON
         if not content_text.startswith("["):
