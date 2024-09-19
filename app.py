@@ -317,7 +317,7 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations from the generated response without subheadings."""
-    st.write(response)
+    #st.write(response)
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
     Remove the subheadings, and retain only the important notes and their references.
     Eliminate filler words like 'yeah', 'okay', etc., and avoid repeated or unnecessary references.
@@ -345,7 +345,7 @@ def parse_chart_notes_for_citations(response):
 
         # Extract the parsed content as text
         #content_text = generated_response.candidates[0].content.strip()
-        content_text = response.candidates[0].content.parts[0].text.strip()
+        content_text = generated_response.candidates[0].content.parts[0].text.strip()
         st.write(content_text)
 
         # Fix JSON formatting issues: check and clean raw content
