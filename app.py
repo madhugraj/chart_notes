@@ -316,21 +316,24 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations from the generated response without subheadings."""
-    #st.write(response)
+    
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
-    1. Avoide Notes without reference.
-    2. Every notes is permitted to have only 5 key reference.
-    3. Eliminate filler words like 'um' ,'yeah', 'okay', etc.,
-    4. Repeate this for all the subheadings.
+    1. Avoid Notes without reference.
+    2. Each note is permitted to have only 5 key references.
+    3. Eliminate filler words like 'um', 'yeah', 'okay', etc.
+    4. Repeat this for all the subheadings.
         
-    5. Do structure the output as:
+    5. Structure the output as:
     [
       {{
-        "note":"note text",
-        "Reference":[
+        "note": "note text",
+        "Reference": [
           "reference text 1",
-          "reference text 2"
+          "reference text 2",
+          "reference text 3",
+          "reference text 4",
+          "reference text 5"
         ]
       }},
       ...
@@ -345,19 +348,15 @@ def parse_chart_notes_for_citations(response):
         generated_response = model.generate_content([prompt])
 
         # Extract the parsed content as text
-        #content_text = generated_response.candidates[0].content.strip()
         content_text = generated_response.candidates[0].content.parts[0].text.strip()
-        st.write(content_text)
+        st.write("Generated content:", content_text)
 
-        # Fix JSON formatting issues: check and clean raw content
-        #content_text = content_text.strip()
-        
-        # Ensure the format is valid JSON
-        if not content_text.startswith("["):
-            content_text = "[" + content_text + "]"
-
-        # Parse the content into JSON (or a dictionary)
-        parsed_data = json.loads(content_text)
+        # Handle the content directly as a dictionary (no need for JSON parsing)
+        if isinstance(content_text, list):
+            parsed_data = content_text
+        else:
+            st.error("Generated content is not in list format.")
+            return None, None
 
         # Extract notes and citations
         notes = []
@@ -367,22 +366,17 @@ def parse_chart_notes_for_citations(response):
             note_text = note_item.get("note", "")
             references = note_item.get("Reference", [])
 
-            # Collect notes
-            if note_text:
-                notes.append(note_text)
-
-            # Collect citations for the note
+            # Collect notes if they have references
             if note_text and references:
-                citations_dict[note_text] = references
+                notes.append(note_text)
+                citations_dict[note_text] = references[:5]  # Limit references to 5
 
         return notes, citations_dict
 
-    except json.JSONDecodeError as e:
-        st.error(f"JSON parsing error: {str(e)}")
-        return None, None
     except Exception as e:
-        st.error(f"An error occurred while parsing the response: {str(e)}")
+        st.error(f"An error occurred while processing the response: {str(e)}")
         return None, None
+
 
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
