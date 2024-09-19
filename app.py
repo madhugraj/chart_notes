@@ -314,6 +314,8 @@ def generate_chart_notes_with_citations(transcript, template):
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
 
+import json
+
 def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations from the generated response without subheadings."""
     
@@ -321,10 +323,10 @@ def parse_chart_notes_for_citations(response):
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
     1. Avoid Notes without reference.
     2. Each note is permitted to have only 5 key references.
-    3. Eliminate filler words like 'um', 'yeah', 'okay', etc.
+    3. Eliminate filler words like 'um', 'yeah', 'okay', 'hello', 'thank you' etc.
     4. Repeat this for all the subheadings.
         
-    5. Structure the output in a list format as:
+    5. Structure the output as:
     [
       {{
         "note": "note text",
@@ -351,11 +353,11 @@ def parse_chart_notes_for_citations(response):
         content_text = generated_response.candidates[0].content.parts[0].text.strip()
         st.write("Generated content:", content_text)
 
-        # Handle the content directly as a dictionary (no need for JSON parsing)
-        if isinstance(content_text, list):
-            parsed_data = content_text
-        else:
-            st.error("Generated content is not in list format.")
+        # Convert the generated content (which is a JSON-like string) into a Python list
+        try:
+            parsed_data = json.loads(content_text)  # Convert JSON string to Python list
+        except json.JSONDecodeError as e:
+            st.error(f"Error parsing the content as JSON: {str(e)}")
             return None, None
 
         # Extract notes and citations
