@@ -463,10 +463,15 @@ if uploaded_file:
                 mime="text/plain"
             )
 
+# Set up a default value for `selected_note` before the selectbox is created
+if "selected_note" not in st.session_state:
+    st.session_state.selected_note = st.session_state.notes[0] if st.session_state.notes else ""
+
 # Move the "Select a note" dropdown to the top of the columns
 st.markdown('<div class="dropdown-container">', unsafe_allow_html=True)
 
 if st.session_state.notes:
+    # Dropdown for note selection, setting session_state on select
     selected_note = st.selectbox(
         "Select a note to see its citation:",
         options=st.session_state.notes,
@@ -474,6 +479,8 @@ if st.session_state.notes:
         key="selected_note",
         help="Select a note from the generated chart notes to see the corresponding highlighted citations."
     )
+
+    # Assign the selected note to session_state before rendering
     st.session_state.selected_note = selected_note
 
 st.markdown('</div>', unsafe_allow_html=True)
@@ -484,6 +491,7 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown("### Transcript")
     if st.session_state.transcript:
+        # Highlight citations based on the selected note
         highlighted_transcript = highlight_citations(
             st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note
         )
@@ -492,7 +500,4 @@ with col1:
 with col2:
     st.markdown("### Generated Chart Notes")
     if st.session_state.chart_notes_with_citations:
-        st.text(st.session_state.chart_notes_with_citations)
-
-# Divider between columns
-st.markdown('<hr style="border:1px solid black;">', unsafe_allow_html=True)
+        st.text_area("Chart Notes", value=st.session_state.chart_notes_with_citations, height=300)
