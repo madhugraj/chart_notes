@@ -282,35 +282,34 @@ def generate_chart_notes_with_citations(transcript, template):
     3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
 
     try:
-        # Start timer
-        start_time = time.time()
+        with st.spinner('Generating chart notes...'):
+            # Start timer
+            start_time = time.time()
 
-        # Generate the response
-        response = model.generate_content([prompt])
+            # Generate the response
+            response = model.generate_content([prompt])
 
-        # Stop timer
-        end_time = time.time()
+            # Stop timer
+            end_time = time.time()
 
-        # Calculate elapsed time
-        elapsed_time = end_time - start_time
+            # Calculate elapsed time
+            elapsed_time = end_time - start_time
 
-        # Show elapsed time in seconds
-        st.write(f"Time taken to generate the chart notes: {elapsed_time:.2f} seconds")
+            # Show elapsed time in seconds
+            st.write(f"Time taken to generate the chart notes: {elapsed_time:.2f} seconds")
 
-        # Check the response structure
-        if hasattr(response, 'candidates') and response.candidates:
-            #content = response.candidates[0].content
-            content = response.candidates[0].content.parts[0].text.strip()
-            #st.write(content)
-            if isinstance(content, str):
-                #content_text = content.strip()
-                return content
+            # Check the response structure
+            if hasattr(response, 'candidates') and response.candidates:
+                content = response.candidates[0].content.parts[0].text.strip()
+                if isinstance(content, str):
+                    return content
+                else:
+                    st.warning("Response content is not a string. Content may not be properly formatted.")
+                    return None
             else:
-                st.warning("Response content is not a string. Content may not be properly formatted.")
+                st.warning("No response from the model. Please check the template or try again.")
                 return None
-        else:
-            st.warning("No response from the model. Please check the template or try again.")
-            return None
+
     except Exception as e:
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
@@ -321,7 +320,7 @@ def parse_chart_notes_for_citations(response):
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
     1. Avoide Notes without reference.
-    2. Aviode repetions and limit to 5 key contexually important references per notes.
+    2. Every notes is permitted to have only 5 key reference.
     3. Eliminate filler words like 'um' ,'yeah', 'okay', etc.,
     4. Repeate this for all the subheadings.
         
