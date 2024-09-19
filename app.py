@@ -56,7 +56,8 @@ st.markdown(
 )
 
 # Display heading with color bar
-st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
+#st.markdown('<h2 style="color: green;">Generated Chart Notes</h2>', unsafe_allow_html=True)
+st.markdown('<div style="color: green;" class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
 # Template definitions
@@ -321,7 +322,9 @@ def generate_chart_notes_with_citations(transcript, template):
 def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations using regex.""" 
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
-    Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
+    Remove the subheadings, and retain only the important notes and their references. 
+    Validate the correctness of the reference with the notes.
+    Ensure you follow the instructions below:
     1. Avoid Notes without reference.
     2. Each note is permitted to have a maximum of 5 key (critical) references.
     3. Strictly Eliminate STOP WORDS and CONJUCTIONS
@@ -479,9 +482,9 @@ if st.session_state.notes:
     )
 
     # Debug statement to check the selected note and citations_dict
-    st.write(f"Selected Note: {selected_note}")
-    st.write(f"Citaitons Dict: {st.session_state.citations_dict}")
-
+    #st.write(f"Selected Note: {selected_note}")
+    #st.write(f"Citaitons Dict: {st.session_state.citations_dict}")
+    st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
     # Highlight the selected note's citations in the transcript
     highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
 
@@ -494,3 +497,4 @@ if st.session_state.notes:
     with col2:
         st.markdown('<h2 style="color: green;">Generated Chart Notes</h2>', unsafe_allow_html=True)
         st.markdown(f"<div style='color: green;'>{st.session_state.chart_notes_with_citations}</div>", unsafe_allow_html=True)
+        st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
