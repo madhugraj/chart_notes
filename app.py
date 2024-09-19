@@ -8,13 +8,7 @@ import time
 api_key = st.secrets["api_key"]
 genai.configure(api_key=api_key)
 
-generation_config = {
-    "temperature": 0,
-    "top_p": 1.0,
-    "top_k": 34,
-    "max_output_tokens": 8192,
-    "response_mime_type": "text/plain",
-}
+generation_config = {}
 
 model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
@@ -56,12 +50,11 @@ st.markdown(
 )
 
 # Display heading with color bar
-#st.markdown('<h2 style="color: green;">Generated Chart Notes</h2>', unsafe_allow_html=True)
 st.markdown('<div style="color: green;" class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
 # Template definitions
-template_1 = """
+template_1 = """  
 
 **Chief Complaint**
 
@@ -114,9 +107,9 @@ The physician personally evaluated the patient and reviewed the history, physica
 **Scribe Acknowledgment:**  
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
 
-""" 
-
-template_2 = """ Historian-
+"""
+template_2 = """
+Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
 
 CHIEF COMPLAINT- 
@@ -274,10 +267,10 @@ Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
 Follow up
-"""  
+"""
+
 
 def extract_transcript_from_json(json_file):
-    """Extract recognizedText from the JSON file.""" 
     transcript_text = ""
     data = json.load(json_file)
     
@@ -289,7 +282,6 @@ def extract_transcript_from_json(json_file):
     return transcript_text.strip()
 
 def generate_chart_notes_with_citations(transcript, template):
-    """Generate chart notes with citations using the model.""" 
     prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
     1. Number the references sequentially in the order they first appear in the text.
     2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
@@ -320,18 +312,17 @@ def generate_chart_notes_with_citations(transcript, template):
         return None
 
 def parse_chart_notes_for_citations(response):
-    """Parse the chart notes and citations using regex.""" 
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
     Remove the subheadings, and retain only the important notes and their references. 
     Validate the correctness of the reference with the notes.
     Ensure you follow the instructions below:
-    1. Avoid Notes without reference.
+    1. Avoid Notes without reference and single word reference.
     2. Each note is permitted to have a maximum of 5 key (critical) references.
     3. Strictly Eliminate STOP WORDS and CONJUCTIONS
     4. Remove filler words like 'so','um', 'yeah', 'okay','well','thank you', 'hello','just','you know'etc, as they are not necessary.
-    4. Repeat this for all the subheadings.
+    5. Repeat this for all the subheadings.
     
-    5. Structure the output as:
+    6. Structure the output as:
     [
       {{
         "note": "note text",
@@ -348,37 +339,29 @@ def parse_chart_notes_for_citations(response):
     """
 
     try:
+        # Use a single spinner for parsing
         with st.spinner('Parsing chart notes for citations...'):
-            # Generate the content using the model
             generated_response = model.generate_content([prompt])
-
-            # Extract the parsed content as text
             content_text = generated_response.candidates[0].content.parts[0].text.strip()
 
-            # Check if content_text is empty
             if not content_text:
                 st.error("Generated content is empty.")
                 return None, None
 
-            # Regex pattern to match notes and references
             note_pattern = r'"note":\s*"([^"]+)"'
             reference_pattern = r'"Reference":\s*\[\s*([^]]+)\s*\]'
 
-            # Find all notes
             notes = re.findall(note_pattern, content_text)
-            st.write("Parsed notes:", notes)  # Debug statement
+            st.write("Parsed notes:", notes)
 
-            # Find all references and split them into individual references
             raw_references = re.findall(reference_pattern, content_text)
             citations_dict = {}
 
             for note, raw_ref in zip(notes, raw_references):
                 references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
-                
-                # Limit to 5 references
                 citations_dict[note] = references[:5]
 
-            st.write("Generated citations_dict:", citations_dict)  # Debug statement
+            st.write("Generated citations_dict:", citations_dict)
 
             return notes, citations_dict
 
@@ -387,21 +370,18 @@ def parse_chart_notes_for_citations(response):
         return None, None
 
 def highlight_citations(transcript, citations_dict, selected_note):
-    """Highlight all citations in the transcript based on the selected note.""" 
     highlighted_transcript = transcript
 
-    # Check if the selected note has associated citations
     if selected_note in citations_dict:
         citation_texts = citations_dict[selected_note]
 
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text.strip())
-            # Ensure highlighting is done in a case-insensitive manner, but only for the first occurrence
             highlighted_transcript = re.sub(
                 citation_text_escaped,
                 f"<mark style='background-color: yellow'>{citation_text.strip()}</mark>",
                 highlighted_transcript,
-                count=1,  # Only replace the first occurrence
+                count=1,
                 flags=re.IGNORECASE
             )           
 
@@ -426,7 +406,6 @@ template_options = {"Template 1": template_1, "Template 2": template_2}
 template_choice = st.radio("Select a template:", list(template_options.keys()))
 st.session_state.selected_template = template_options[template_choice]
 
-# Display selected template
 with st.expander("View Selected Template", expanded=False):
     st.text(st.session_state.selected_template)
 
@@ -444,28 +423,11 @@ if uploaded_file:
     if st.button("Generate Chart Notes"):
         response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
         if response:
-            with st.spinner('Parsing chart notes for citations...'):
-                notes, citations_dict = parse_chart_notes_for_citations(response)
-                st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
-                st.session_state.chart_notes_with_citations = response
-                st.session_state.notes = notes
-                st.session_state.citations_dict = citations_dict
-
-                # Add download buttons
-                st.download_button(
-                    label="Download Chart Notes with References",
-                    data=st.session_state.chart_notes_with_citations,
-                    file_name="chart_notes_with_references.txt",
-                    mime="text/plain"
-                )
-
-                chart_notes_without_references = re.sub(r'{References:\s*\[\d+\]:\s*".*?"}', '', st.session_state.chart_notes_with_citations)
-                st.download_button(
-                    label="Download Chart Notes without References",
-                    data=chart_notes_without_references,
-                    file_name="chart_notes_without_references.txt",
-                    mime="text/plain"
-                )
+            notes, citations_dict = parse_chart_notes_for_citations(response)
+            st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
+            st.session_state.chart_notes_with_citations = response
+            st.session_state.notes = notes
+            st.session_state.citations_dict = citations_dict
 
 # Set up a default value for `selected_note` before the selectbox is created
 if st.session_state.notes and "selected_note" not in st.session_state:
@@ -481,11 +443,7 @@ if st.session_state.notes:
         help="Select a note from the generated chart notes to see the corresponding highlighted citations."
     )
 
-    # Debug statement to check the selected note and citations_dict
-    #st.write(f"Selected Note: {selected_note}")
-    #st.write(f"Citaitons Dict: {st.session_state.citations_dict}")
     st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
-    # Highlight the selected note's citations in the transcript
     highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
 
     col1, col2 = st.columns(2)
@@ -497,4 +455,23 @@ if st.session_state.notes:
     with col2:
         st.markdown('<h2 style="color: green;">Generated Chart Notes</h2>', unsafe_allow_html=True)
         st.markdown(f"<div style='color: green;'>{st.session_state.chart_notes_with_citations}</div>", unsafe_allow_html=True)
-    st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
+
+# Add download buttons separately to avoid issues with visibility
+if st.session_state.chart_notes_with_citations:
+    st.download_button(
+        label="Download Chart Notes with References",
+        data=st.session_state.chart_notes_with_citations,
+        file_name="chart_notes_with_references.txt",
+        mime="text/plain"
+    )
+
+if st.session_state.chart_notes_with_citations:
+    chart_notes_without_references = re.sub(r'{References:\s*\[\d+\]:\s*".*?"}', '', st.session_state.chart_notes_with_citations)
+    st.download_button(
+        label="Download Chart Notes without References",
+        data=chart_notes_without_references,
+        file_name="chart_notes_without_references.txt",
+        mime="text/plain"
+    )
+
+st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
