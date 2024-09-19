@@ -1,7 +1,6 @@
 import streamlit as st
 import json
 import re
-import google.generativeai as genai
 import time
 
 # Set page configuration
@@ -111,7 +110,7 @@ The physician personally evaluated the patient and reviewed the history, physica
 **Scribe Acknowledgment:**  
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
 
-    """ 
+    """
 
     template_2 = """ Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
@@ -271,10 +270,10 @@ Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
 Follow up
-    """  
+    """
 
     def extract_transcript_from_json(json_file):
-        """Extract recognizedText from the JSON file.""" 
+        """Extract recognizedText from the JSON file."""
         transcript_text = ""
         data = json.load(json_file)
         
@@ -286,11 +285,11 @@ Follow up
         return transcript_text.strip()
 
     def generate_chart_notes_with_citations(transcript, template):
-        """Generate chart notes with citations using the model.""" 
+        """Generate chart notes with citations using the model."""
         prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
         1. Number the references sequentially in the order they first appear in the text.
         2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
-        3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}.""" 
+        3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
 
         try:
             with st.spinner('Generating chart notes...'):
@@ -316,7 +315,7 @@ Follow up
             return None
 
     def parse_chart_notes_for_citations(response):
-        """Parse the chart notes and citations using regex.""" 
+        """Parse the chart notes and citations using regex."""
         
         prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
         Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
@@ -385,7 +384,7 @@ Follow up
             return None, None
 
     def highlight_citations(transcript, citations_dict, selected_note):
-        """Highlight all citations in the transcript based on the selected note.""" 
+        """Highlight all citations in the transcript based on the selected note."""
         highlighted_transcript = transcript
 
         # Check if the selected note has associated citations
