@@ -485,7 +485,9 @@ if st.session_state.notes:
         st.markdown(f"<div>{highlighted_transcript}</div>", unsafe_allow_html=True)
     
     with col2:
-        st.subheader("Generated Chart Notes")
+        #st.subheader("Generated Chart Notes")
+        st.markdown('<h2 class="subheader-green">Generated Chart Notes</h2>', unsafe_allow_html=True)
+        st.markdown(st.session_state.chart_notes_with_citations, unsafe_allow_html=True)
         #st.markdown(st.session_state.chart_notes_with_citations)
         st.markdown(f"<div style='color: green;'>{st.session_state.chart_notes_with_citations}</div>", 
         unsafe_allow_html=True)
