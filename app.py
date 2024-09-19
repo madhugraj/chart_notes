@@ -111,7 +111,7 @@ def parse_chart_notes_for_citations(response):
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
     1. Avoid Notes without reference.
     2. Each note is permitted to have only 5 key references.
-    3. Eliminate filler words like 'um', 'yeah', 'okay','well','thank you', 'hello' etc.
+    3. Eliminate stop and filler words like 'um', 'yeah', 'okay','well','thank you', 'hello','just','you know', etc.
     4. Repeat this for all the subheadings.
     
     5. Structure the output as:
@@ -160,8 +160,8 @@ def parse_chart_notes_for_citations(response):
             # Split references and clean up any unnecessary characters
             references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
             
-            # Limit to 8 references
-            citations_dict[note] = references[:8]
+            # Limit to 5 references
+            citations_dict[note] = references[:5]
         
         st.write("Generated citations_dict:", citations_dict)
 
