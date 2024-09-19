@@ -4,9 +4,7 @@ import re
 import google.generativeai as genai
 import time
 
-# Set page configuration
-st.set_page_config(layout="wide")
-
+#st. set_page_config(layout="wide") 
 # Retrieve the API key from secrets
 api_key = st.secrets["api_key"]
 genai.configure(api_key=api_key)
@@ -53,12 +51,6 @@ st.markdown(
     .dropdown-container {
         margin-bottom: 20px;
     }
-    .blue-text {
-        color: blue;
-    }
-    .green-text {
-        color: green;
-    }
     </style>
     """,
     unsafe_allow_html=True
@@ -67,6 +59,8 @@ st.markdown(
 # Display heading with color bar
 st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
+#st. set_page_config(layout="wide") 
+#st.session_state.theme = "dark"
 
 # Template definitions
 template_1 = """
@@ -309,6 +303,7 @@ def generate_chart_notes_with_citations(transcript, template):
             end_time = time.time()
             elapsed_time = end_time - start_time
             st.write(f"Time taken to generate the chart notes: {elapsed_time:.2f} seconds")
+            st.write("Generating Citations...")
 
             if hasattr(response, 'candidates') and response.candidates:
                 candidate = response.candidates[0]
@@ -332,9 +327,9 @@ def parse_chart_notes_for_citations(response):
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
     1. Avoid Notes without reference.
     2. Each note is permitted to have a maximum of 5 key (critical) references.
-    3. Remove STOP WORDS and CONJUNCTIONS
-    4. Strictly Eliminate stop words and filler words like 'um', 'yeah', 'okay','well','thank you', 'hello','just','you know','you know' etc as they are not legitimate reference for the notes.
-    5. Repeat this for all the subheadings.
+    3. Strictly Eliminate stop words and conjunctions
+    4. Do not refer any filler words like 'so','um', 'yeah', 'okay','well','thank you', 'hello','just','you know'etc.
+    4. Repeat this for all the subheadings.
     
     5. Structure the output as:
     [
@@ -347,10 +342,7 @@ def parse_chart_notes_for_citations(response):
           "reference text 4",
           "reference text 5"
         ]
-      }},
-      ...
-    ]
-    
+      }}]
     Response:
     {response}
     """
@@ -379,7 +371,6 @@ def parse_chart_notes_for_citations(response):
         citations_dict = {}
 
         for note, raw_ref in zip(notes, raw_references):
-            # Split references and clean up any unnecessary characters
             references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
             
             # Limit to 5 references
@@ -396,8 +387,6 @@ def parse_chart_notes_for_citations(response):
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note.""" 
     highlighted_transcript = transcript
-    st.write("Citaton DICTIONARY")
-    st.write(citations_dict)
 
     # Check if the selected note has associated citations
     if selected_note in citations_dict:
@@ -405,14 +394,14 @@ def highlight_citations(transcript, citations_dict, selected_note):
 
         for citation_text in citation_texts:
             citation_text_escaped = re.escape(citation_text.strip())
-            # Ensure highlighting is done in a case-insensitive manner
+            # Ensure highlighting is done in a case-insensitive manner, but only for the first occurrence
             highlighted_transcript = re.sub(
                 citation_text_escaped,
-                lambda m: f"<mark style='background-color: yellow'>{m.group(0)}</mark>",
+                f"<mark style='background-color: yellow'>{citation_text.strip()}</mark>",
                 highlighted_transcript,
-                count=1,
+                count=1,  # Only replace the first occurrence
                 flags=re.IGNORECASE
-            )
+            )           
 
     return highlighted_transcript
 
@@ -440,7 +429,7 @@ with st.expander("View Selected Template", expanded=False):
     st.text(st.session_state.selected_template)
 
 # Upload file
-uploaded_file = st.file_uploader("Upload a TXT or JSON file containing the transcript", type=["json", "txt"])
+uploaded_file = st.file_uploader("Upload a file containing the transcript", type=["json", "txt"])
 
 if uploaded_file:
     if uploaded_file.type == "application/json":
@@ -467,7 +456,7 @@ if uploaded_file:
                 mime="text/plain"
             )
 
-            chart_notes_without_references = re.sub(r'\[\d+\]: ".*?"', '', st.session_state.chart_notes_with_citations)
+            chart_notes_without_references = re.sub(r'{References:\s*\[\d+\]:\s*".*?"}', '', st.session_state.chart_notes_with_citations)
             st.download_button(
                 label="Download Chart Notes without References",
                 data=chart_notes_without_references,
@@ -475,29 +464,29 @@ if uploaded_file:
                 mime="text/plain"
             )
 
-    with st.expander("View Transcript", expanded=True):
-        st.text(st.session_state.transcript)
+# Set up a default value for `selected_note` before the selectbox is created
+if st.session_state.notes and "selected_note" not in st.session_state:
+    st.session_state.selected_note = st.session_state.notes[0]
 
-    with st.expander("Generated Chart Notes", expanded=True):
-        st.markdown(st.session_state.chart_notes_with_citations, unsafe_allow_html=True)
+# Move the "Select a note" dropdown to the top
+if st.session_state.notes:
+    selected_note = st.selectbox(
+        "Select a note to see its citation:",
+        options=st.session_state.notes,
+        format_func=lambda note: note[:50] + '...' if len(note) > 50 else note,
+        key="selected_note",
+        help="Select a note from the generated chart notes to see the corresponding highlighted citations."
+    )
 
-    # Display dropdown and highlight selected note
-    if st.session_state.notes:
-        selected_note = st.selectbox(
-            "Select a note to highlight in the transcript:",
-            st.session_state.notes,
-            key="note_dropdown"
-        )
-        st.session_state.selected_note = selected_note
+    # Highlight the selected note's citations in the transcript
+    highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, selected_note)
 
-        if st.session_state.selected_note:
-            highlighted_transcript = highlight_citations(
-                st.session_state.transcript,
-                st.session_state.citations_dict,
-                st.session_state.selected_note
-            )
-
-            with st.expander("Highlighted Transcript", expanded=True):
-                st.markdown(highlighted_transcript, unsafe_allow_html=True)
-else:
-    st.warning("Please upload a transcript file to get started.")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Transcript")
+        st.markdown(f"<div>{highlighted_transcript}</div>", unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<h2 style="color: green;">Generated Chart Notes</h2>', unsafe_allow_html=True)
+        st.markdown(f"<div style='color: green;'>{st.session_state.chart_notes_with_citations}</div>", unsafe_allow_html=True)
