@@ -487,6 +487,6 @@ if st.session_state.notes:
     with col2:
         st.subheader("Generated Chart Notes")
         #st.markdown(st.session_state.chart_notes_with_citations)
-        st.markdown(f"<div style='color: blue;'>{st.session_state.chart_notes_with_citations}</div>", 
+        st.markdown(f"<div style='color: green;'>{st.session_state.chart_notes_with_citations}</div>", 
         unsafe_allow_html=True)
 
