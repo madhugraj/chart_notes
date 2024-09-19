@@ -1,21 +1,35 @@
 import streamlit as st
 import json
 import re
+import google.generativeai as genai
 import time
 
 # Set page configuration
 st.set_page_config(layout="wide")
 
-# Custom CSS for theme
+# Retrieve the API key from secrets
+api_key = st.secrets["api_key"]
+genai.configure(api_key=api_key)
+
+generation_config = {
+    "temperature": 0,
+    "top_p": 1.0,
+    "top_k": 34,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+)
+
+# Custom CSS for background color and other styles
 st.markdown(
     """
     <style>
-    .app-container {
+    body {
         background-color: #013220;
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
     .heading {
         font-size: 40px;
@@ -46,19 +60,16 @@ st.markdown(
         color: green;
     }
     </style>
-    """, unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True
 )
 
-# Create a container for app content
-with st.container():
-    st.markdown('<div class="app-container">', unsafe_allow_html=True)
+# Display heading with color bar
+st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
+st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
-    # Heading and color bar
-    st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
-    st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
-
-    # Template definitions
-    template_1 = """
+# Template definitions
+template_1 = """
 **Chief Complaint**
 
 **Reason for Visit (Summary/Chief Complaint):**  
@@ -110,9 +121,9 @@ The physician personally evaluated the patient and reviewed the history, physica
 **Scribe Acknowledgment:**  
 The scribe, [Scribe Name], documented for [Physician Name] during the encounter with the patient, [Patient Name], on [Date] at [Time].
 
-    """
+""" 
 
-    template_2 = """ Historian-
+template_2 = """ Historian-
 Refers to the individual providing the patient's medical history during the clinical encounter. This could be the patient themselves or someone else, such as a family member, caregiver, or guardian, especially in cases where the patient is unable to communicate effectively 
 
 CHIEF COMPLAINT- 
@@ -270,226 +281,223 @@ Refill / “Continued current medication” / Prescription/ Change in dosage
 Patient education
 Referral
 Follow up
+"""  
+
+def extract_transcript_from_json(json_file):
+    """Extract recognizedText from the JSON file.""" 
+    transcript_text = ""
+    data = json.load(json_file)
+    
+    for transcript in data['transcripts']:
+        for turn in transcript['speakerTurns']:
+            for alt in turn['alternatives']:
+                transcript_text += alt['recognizedText'] + " "
+    
+    return transcript_text.strip()
+
+def generate_chart_notes_with_citations(transcript, template):
+    """Generate chart notes with citations using the model.""" 
+    prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
+    1. Number the references sequentially in the order they first appear in the text.
+    2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
+    3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}.""" 
+
+    try:
+        with st.spinner('Generating chart notes...'):
+            start_time = time.time()
+            response = model.generate_content([prompt])
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            st.write(f"Time taken to generate the chart notes: {elapsed_time:.2f} seconds")
+
+            if hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and candidate.content and candidate.content.parts:
+                    content = candidate.content.parts[0].text.strip()
+                    if isinstance(content, str):
+                        return content
+                    else:
+                        st.warning("Response content is not a string. Content may not be properly formatted.")
+                        return None
+            st.warning("No response from the model. Please check the template or try again.")
+            return None
+    except Exception as e:
+        st.error(f"An error occurred while generating chart notes: {str(e)}")
+        return None
+
+def parse_chart_notes_for_citations(response):
+    """Parse the chart notes and citations using regex.""" 
+    
+    prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
+    Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
+    1. Avoid Notes without reference.
+    2. Each note is permitted to have a maximum of 5 key (critical) references.
+    3. Remove STOP WORDS and CONJUNCTIONS
+    4. Strictly Eliminate stop words and filler words like 'um', 'yeah', 'okay','well','thank you', 'hello','just','you know','you know' etc as they are not legitimate reference for the notes.
+    5. Repeat this for all the subheadings.
+    
+    5. Structure the output as:
+    [
+      {{
+        "note": "note text",
+        "Reference": [
+          "reference text 1",
+          "reference text 2",
+          "reference text 3",
+          "reference text 4",
+          "reference text 5"
+        ]
+      }},
+      ...
+    ]
+    
+    Response:
+    {response}
     """
 
-    def extract_transcript_from_json(json_file):
-        """Extract recognizedText from the JSON file."""
-        transcript_text = ""
-        data = json.load(json_file)
-        
-        for transcript in data['transcripts']:
-            for turn in transcript['speakerTurns']:
-                for alt in turn['alternatives']:
-                    transcript_text += alt['recognizedText'] + " "
-        
-        return transcript_text.strip()
+    try:
+        # Generate the content using the model
+        generated_response = model.generate_content([prompt])
 
-    def generate_chart_notes_with_citations(transcript, template):
-        """Generate chart notes with citations using the model."""
-        prompt = f"""Create chart notes as per the {template} for the {transcript}. Include citations for specific information extracted from the transcript, strictly referencing all the exact statements throughout the transcript. The citations must follow these rules:
-        1. Number the references sequentially in the order they first appear in the text.
-        2. Use a unique citation number for each unique statement. If the same statement is cited again, use the existing citation number.
-        3. Format citations as: {{References: [1]: "citation text", [2]: "citation text"}}."""
+        # Extract the parsed content as text
+        content_text = generated_response.candidates[0].content.parts[0].text.strip()
 
-        try:
-            with st.spinner('Generating chart notes...'):
-                start_time = time.time()
-                response = model.generate_content([prompt])
-                end_time = time.time()
-                elapsed_time = end_time - start_time
-                st.write(f"Time taken to generate the chart notes: {elapsed_time:.2f} seconds")
-
-                if hasattr(response, 'candidates') and response.candidates:
-                    candidate = response.candidates[0]
-                    if hasattr(candidate, 'content') and candidate.content and candidate.content.parts:
-                        content = candidate.content.parts[0].text.strip()
-                        if isinstance(content, str):
-                            return content
-                        else:
-                            st.warning("Response content is not a string. Content may not be properly formatted.")
-                            return None
-                st.warning("No response from the model. Please check the template or try again.")
-                return None
-        except Exception as e:
-            st.error(f"An error occurred while generating chart notes: {str(e)}")
-            return None
-
-    def parse_chart_notes_for_citations(response):
-        """Parse the chart notes and citations using regex."""
-        
-        prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
-        Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
-        1. Avoid Notes without reference.
-        2. Each note is permitted to have a maximum of 5 key (critical) references.
-        3. Remove STOP WORDS and CONJUNCTIONS
-        4. Strictly Eliminate stop words and filler words like 'um', 'yeah', 'okay','well','thank you', 'hello','just','you know','you know' etc as they are not legitimate reference for the notes.
-        5. Repeat this for all the subheadings.
-        
-        5. Structure the output as:
-        [
-          {{
-            "note": "note text",
-            "Reference": [
-              "reference text 1",
-              "reference text 2",
-              "reference text 3",
-              "reference text 4",
-              "reference text 5"
-            ]
-          }},
-          ...
-        ]
-        
-        Response:
-        {response}
-        """
-
-        try:
-            with st.spinner('Parsing chart notes and citations...'):
-                # Generate the content using the model
-                generated_response = model.generate_content([prompt])
-
-                # Extract the parsed content as text
-                content_text = generated_response.candidates[0].content.parts[0].text.strip()
-
-                # Check if content_text is empty
-                if not content_text:
-                    st.error("Generated content is empty.")
-                    return None, None
-
-                # Regex pattern to match notes and references
-                note_pattern = r'"note":\s*"([^"]+)"'
-                reference_pattern = r'"Reference":\s*\[\s*([^]]+)\s*\]'
-
-                # Find all notes
-                notes = re.findall(note_pattern, content_text)
-
-                # Find all references and split them into individual references
-                raw_references = re.findall(reference_pattern, content_text)
-                citations_dict = {}
-
-                for note, raw_ref in zip(notes, raw_references):
-                    # Split references and clean up any unnecessary characters
-                    references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
-                    
-                    # Limit to 5 references
-                    citations_dict[note] = references[:5]
-                
-                st.write("Generated citations_dict:", citations_dict)
-
-                return notes, citations_dict
-
-        except Exception as e:
-            st.error(f"An error occurred while processing the response: {str(e)}")
+        # Check if content_text is empty
+        if not content_text:
+            st.error("Generated content is empty.")
             return None, None
 
-    def highlight_citations(transcript, citations_dict, selected_note):
-        """Highlight all citations in the transcript based on the selected note."""
-        highlighted_transcript = transcript
+        # Regex pattern to match notes and references
+        note_pattern = r'"note":\s*"([^"]+)"'
+        reference_pattern = r'"Reference":\s*\[\s*([^]]+)\s*\]'
 
-        # Check if the selected note has associated citations
-        if selected_note in citations_dict:
-            citation_texts = citations_dict[selected_note]
+        # Find all notes
+        notes = re.findall(note_pattern, content_text)
 
-            for citation_text in citation_texts:
-                citation_text_escaped = re.escape(citation_text.strip())
-                # Ensure highlighting is done in a case-insensitive manner
-                highlighted_transcript = re.sub(
-                    citation_text_escaped,
-                    lambda m: f"<mark style='background-color: yellow'>{m.group(0)}</mark>",
-                    highlighted_transcript,
-                    count=1,
-                    flags=re.IGNORECASE
-                )
+        # Find all references and split them into individual references
+        raw_references = re.findall(reference_pattern, content_text)
+        citations_dict = {}
 
-        return highlighted_transcript
+        for note, raw_ref in zip(notes, raw_references):
+            # Split references and clean up any unnecessary characters
+            references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
+            
+            # Limit to 5 references
+            citations_dict[note] = references[:5]
+        
+        st.write("Generated citations_dict:", citations_dict)
 
-    # Initialize session state variables
-    if "transcript" not in st.session_state:
-        st.session_state.transcript = ""
-    if "chart_notes_with_citations" not in st.session_state:
-        st.session_state.chart_notes_with_citations = ""
-    if "notes" not in st.session_state:
-        st.session_state.notes = []
-    if "citations_dict" not in st.session_state:
-        st.session_state.citations_dict = {}
-    if "selected_note" not in st.session_state:
-        st.session_state.selected_note = ""
-    if "selected_template" not in st.session_state:
-        st.session_state.selected_template = template_1  # Default to template 1
+        return notes, citations_dict
 
-    # Template selection
-    template_options = {"Template 1": template_1, "Template 2": template_2}
-    template_choice = st.radio("Select a template:", list(template_options.keys()))
-    st.session_state.selected_template = template_options[template_choice]
+    except Exception as e:
+        st.error(f"An error occurred while processing the response: {str(e)}")
+        return None, None
 
-    # Display selected template
-    with st.expander("View Selected Template", expanded=False):
-        st.text(st.session_state.selected_template)
+def highlight_citations(transcript, citations_dict, selected_note):
+    """Highlight all citations in the transcript based on the selected note.""" 
+    highlighted_transcript = transcript
+    st.write("Citaton DICTIONARY")
+    st.write(citations_dict)
 
-    # Upload file
-    uploaded_file = st.file_uploader("Upload a TXT or JSON file containing the transcript", type=["json", "txt"])
+    # Check if the selected note has associated citations
+    if selected_note in citations_dict:
+        citation_texts = citations_dict[selected_note]
 
-    if uploaded_file:
-        if uploaded_file.type == "application/json":
-            transcript = extract_transcript_from_json(uploaded_file)
-        elif uploaded_file.type == "text/plain":
-            transcript = uploaded_file.read().decode("utf-8")
-
-        st.session_state.transcript = transcript
-
-        if st.button("Generate Chart Notes"):
-            response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
-            if response:
-                with st.spinner('Parsing chart notes and citations...'):
-                    notes, citations_dict = parse_chart_notes_for_citations(response)
-                
-                st.session_state.chart_notes_with_citations = response
-                st.session_state.notes = notes
-                st.session_state.citations_dict = citations_dict
-
-                # Add download buttons
-                st.download_button(
-                    label="Download Chart Notes with References",
-                    data=response,
-                    file_name="chart_notes_with_references.txt",
-                    mime="text/plain"
-                )
-
-                chart_notes_without_references = '\n'.join(notes)
-                st.download_button(
-                    label="Download Chart Notes without References",
-                    data=chart_notes_without_references,
-                    file_name="chart_notes_without_references.txt",
-                    mime="text/plain"
-                )
-
-        with st.expander("View Transcript", expanded=True):
-            st.text(st.session_state.transcript)
-
-        with st.expander("Generated Chart Notes", expanded=True):
-            st.markdown(st.session_state.chart_notes_with_citations, unsafe_allow_html=True)
-
-        # Display dropdown and highlight selected note
-        if st.session_state.notes:
-            selected_note = st.selectbox(
-                "Select a note to highlight in the transcript:",
-                st.session_state.notes,
-                key="note_dropdown"
+        for citation_text in citation_texts:
+            citation_text_escaped = re.escape(citation_text.strip())
+            # Ensure highlighting is done in a case-insensitive manner
+            highlighted_transcript = re.sub(
+                citation_text_escaped,
+                lambda m: f"<mark style='background-color: yellow'>{m.group(0)}</mark>",
+                highlighted_transcript,
+                count=1,
+                flags=re.IGNORECASE
             )
-            st.session_state.selected_note = selected_note
 
-            if st.session_state.selected_note:
-                highlighted_transcript = highlight_citations(
-                    st.session_state.transcript,
-                    st.session_state.citations_dict,
-                    st.session_state.selected_note
-                )
+    return highlighted_transcript
 
-                with st.expander("Highlighted Transcript", expanded=True):
-                    st.markdown(highlighted_transcript, unsafe_allow_html=True)
+# Initialize session state variables
+if "transcript" not in st.session_state:
+    st.session_state.transcript = ""
+if "chart_notes_with_citations" not in st.session_state:
+    st.session_state.chart_notes_with_citations = ""
+if "notes" not in st.session_state:
+    st.session_state.notes = []
+if "citations_dict" not in st.session_state:
+    st.session_state.citations_dict = {}
+if "selected_note" not in st.session_state:
+    st.session_state.selected_note = ""
+if "selected_template" not in st.session_state:
+    st.session_state.selected_template = template_1  # Default to template 1
 
-    else:
-        st.warning("Please upload a transcript file to get started.")
+# Template selection
+template_options = {"Template 1": template_1, "Template 2": template_2}
+template_choice = st.radio("Select a template:", list(template_options.keys()))
+st.session_state.selected_template = template_options[template_choice]
 
-    st.markdown('</div>', unsafe_allow_html=True)
+# Display selected template
+with st.expander("View Selected Template", expanded=False):
+    st.text(st.session_state.selected_template)
+
+# Upload file
+uploaded_file = st.file_uploader("Upload a TXT or JSON file containing the transcript", type=["json", "txt"])
+
+if uploaded_file:
+    if uploaded_file.type == "application/json":
+        transcript = extract_transcript_from_json(uploaded_file)
+    elif uploaded_file.type == "text/plain":
+        transcript = uploaded_file.read().decode("utf-8")
+
+    st.session_state.transcript = transcript
+
+    if st.button("Generate Chart Notes"):
+        response = generate_chart_notes_with_citations(transcript, st.session_state.selected_template)
+        if response:
+            notes, citations_dict = parse_chart_notes_for_citations(response)
+            
+            st.session_state.chart_notes_with_citations = response
+            st.session_state.notes = notes
+            st.session_state.citations_dict = citations_dict
+
+            # Add download buttons
+            st.download_button(
+                label="Download Chart Notes with References",
+                data=st.session_state.chart_notes_with_citations,
+                file_name="chart_notes_with_references.txt",
+                mime="text/plain"
+            )
+
+            chart_notes_without_references = re.sub(r'\[\d+\]: ".*?"', '', st.session_state.chart_notes_with_citations)
+            st.download_button(
+                label="Download Chart Notes without References",
+                data=chart_notes_without_references,
+                file_name="chart_notes_without_references.txt",
+                mime="text/plain"
+            )
+
+    with st.expander("View Transcript", expanded=True):
+        st.text(st.session_state.transcript)
+
+    with st.expander("Generated Chart Notes", expanded=True):
+        st.markdown(st.session_state.chart_notes_with_citations, unsafe_allow_html=True)
+
+    # Display dropdown and highlight selected note
+    if st.session_state.notes:
+        selected_note = st.selectbox(
+            "Select a note to highlight in the transcript:",
+            st.session_state.notes,
+            key="note_dropdown"
+        )
+        st.session_state.selected_note = selected_note
+
+        if st.session_state.selected_note:
+            highlighted_transcript = highlight_citations(
+                st.session_state.transcript,
+                st.session_state.citations_dict,
+                st.session_state.selected_note
+            )
+
+            with st.expander("Highlighted Transcript", expanded=True):
+                st.markdown(highlighted_transcript, unsafe_allow_html=True)
+else:
+    st.warning("Please upload a transcript file to get started.")
