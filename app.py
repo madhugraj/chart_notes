@@ -317,6 +317,7 @@ def generate_chart_notes_with_citations(transcript, template):
 
 def parse_chart_notes_for_citations(response):
     """Parse the chart notes and citations from the generated response without subheadings."""
+    st.write(response)
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
     Remove the subheadings, and retain only the important notes and their references.
     Eliminate filler words like 'yeah', 'okay', etc., and avoid repeated or unnecessary references.
