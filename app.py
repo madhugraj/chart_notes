@@ -454,10 +454,7 @@ if uploaded_file:
                 mime="text/plain"
             )
 
-            chart_notes_without_references = re.sub(r'\[\d+\]: ".*?"', '', st.session_state.chart_notes_with_citations)
-            st.download_button(
-                label="Download Chart Notes without References",
-                data=chart_notes_without_references,
+
             chart_notes_without_references = re.sub(r'\[\d+\]: ".*?"', '', st.session_state.chart_notes_with_citations)
             st.download_button(
                 label="Download Chart Notes without References",
