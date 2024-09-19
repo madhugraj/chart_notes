@@ -314,18 +314,18 @@ def generate_chart_notes_with_citations(transcript, template):
         st.error(f"An error occurred while generating chart notes: {str(e)}")
         return None
 
-import json
+import re
 
 def parse_chart_notes_for_citations(response):
-    """Parse the chart notes and citations from the generated response without subheadings."""
+    """Parse the chart notes and citations using regex."""
     
     prompt = f"""In the response {response}, you'll observe structured content with subheadings, notes, and references.
     Remove the subheadings, and retain only the important notes and their references. Ensure you follow the instructions below:
     1. Avoid Notes without reference.
     2. Each note is permitted to have only 5 key references.
-    3. Eliminate filler words like 'um', 'yeah', 'okay', 'hello', 'thank you' etc.
+    3. Eliminate filler words like 'um', 'yeah', 'okay', etc.
     4. Repeat this for all the subheadings.
-        
+    
     5. Structure the output as:
     [
       {{
@@ -351,27 +351,32 @@ def parse_chart_notes_for_citations(response):
 
         # Extract the parsed content as text
         content_text = generated_response.candidates[0].content.parts[0].text.strip()
-        st.write("Generated content:", content_text)
 
-        # Convert the generated content (which is a JSON-like string) into a Python list
-        try:
-            parsed_data = json.loads(content_text)  # Convert JSON string to Python list
-        except json.JSONDecodeError as e:
-            st.error(f"Error parsing the content as JSON: {str(e)}")
+        # Print the raw content for debugging
+        st.write("Generated content raw:", content_text)
+
+        # Check if content_text is empty
+        if not content_text:
+            st.error("Generated content is empty.")
             return None, None
 
-        # Extract notes and citations
-        notes = []
+        # Regex pattern to match notes and references
+        note_pattern = r'"note":\s*"([^"]+)"'
+        reference_pattern = r'"Reference":\s*\[\s*([^]]+)\s*\]'
+
+        # Find all notes
+        notes = re.findall(note_pattern, content_text)
+
+        # Find all references and split them into individual references
+        raw_references = re.findall(reference_pattern, content_text)
         citations_dict = {}
 
-        for note_item in parsed_data:
-            note_text = note_item.get("note", "")
-            references = note_item.get("Reference", [])
-
-            # Collect notes if they have references
-            if note_text and references:
-                notes.append(note_text)
-                citations_dict[note_text] = references[:5]  # Limit references to 5
+        for note, raw_ref in zip(notes, raw_references):
+            # Split references and clean up any unnecessary characters
+            references = [ref.strip().strip('"') for ref in raw_ref.split(',')]
+            
+            # Limit to 5 references
+            citations_dict[note] = references[:5]
 
         return notes, citations_dict
 
