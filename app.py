@@ -390,21 +390,21 @@ def parse_chart_notes_for_citations(response):
 def highlight_citations(transcript, citations_dict, selected_note):
     """Highlight all citations in the transcript based on the selected note."""
     highlighted_transcript = transcript
-    
+
     # Check if the selected note has associated citations
     if selected_note in citations_dict:
         citation_texts = citations_dict[selected_note]
-        
+
         for citation_text in citation_texts:
-            citation_text_escaped = re.escape(citation_text)
+            citation_text_escaped = re.escape(citation_text.strip())
             # Ensure highlighting is done in a case-insensitive manner
             highlighted_transcript = re.sub(
                 citation_text_escaped,
-                f"<mark style='background-color: yellow'>{citation_text}</mark>",
+                f"<mark style='background-color: yellow'>{citation_text.strip()}</mark>",
                 highlighted_transcript,
                 flags=re.IGNORECASE
             )
-    
+
     return highlighted_transcript
 
 # Initialize session state variables
@@ -452,21 +452,26 @@ if uploaded_file:
 
     notes = st.session_state.get("notes", [])
     
-    if notes:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Transcript")
-            transcript_area = st.empty()
-            transcript_area.markdown(st.session_state.transcript, unsafe_allow_html=True)
+    if st.session_state.get("notes", []):
+    col1, col2 = st.columns(2)
 
-        with col2:
-            st.subheader("Generated Chart Notes")
-            st.text_area("Chart Notes", value=st.session_state.chart_notes_with_citations, height=300, key="chart_notes_display")
-            
-            selected_note = st.selectbox("Select a note to see its citation:", notes, key="note_dropdown")
-            st.session_state.selected_note = selected_note
+    with col1:
+        st.subheader("Transcript")
+        transcript_area = st.empty()
+        transcript_area.markdown(st.session_state.transcript, unsafe_allow_html=True)
 
-            if st.session_state.selected_note:
-                highlighted_transcript = highlight_citations(st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note)
-                transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
+    with col2:
+        st.subheader("Generated Chart Notes")
+        st.text_area("Chart Notes", value=st.session_state.chart_notes_with_citations, height=300, key="chart_notes_display")
+
+        # Dropdown for note selection
+        selected_note = st.selectbox("Select a note to see its citation:", st.session_state.notes, key="note_dropdown")
+        st.session_state.selected_note = selected_note
+
+        # Check if a note is selected and update the transcript with highlights
+        if st.session_state.selected_note:
+            highlighted_transcript = highlight_citations(
+                st.session_state.transcript, st.session_state.citations_dict, st.session_state.selected_note
+            )
+            # Re-render the transcript with highlighted citations
+            transcript_area.markdown(highlighted_transcript, unsafe_allow_html=True)
