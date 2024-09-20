@@ -47,7 +47,7 @@ st.markdown(
     .image-right {
         display: inline-block;
         float: right;
-        height: 300px;
+        width: 300px;
     }
     </style>
     """,
@@ -56,6 +56,7 @@ st.markdown(
 
 # Display heading with color bar and move image to the right
 htp = "logo1.png"
+#st.image(htp, width=200)
 st.markdown(f'<img src="{htp}" class="image-right">', unsafe_allow_html=True)  # Apply the right-aligned image style
 st.markdown('<div style="color: green;" class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
