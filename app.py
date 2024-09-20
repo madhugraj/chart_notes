@@ -15,7 +15,7 @@ model = genai.GenerativeModel(
     generation_config=generation_config,
 )
 
-# Custom CSS for background color and other styles
+# Custom CSS for background color, image positioning, and other styles
 st.markdown(
     """
     <style>
@@ -44,15 +44,22 @@ st.markdown(
     .dropdown-container {
         margin-bottom: 20px;
     }
+    .image-inline-right {
+        display: inline-block;
+        float: right;
+        height: 300px;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Display heading with color bar
-htp="logo1.png"
-st.image(htp, width=200)
-st.markdown('<div style="color: green;" class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
+# Display logo (image) inline to the right
+htp = "logo1.png"
+st.markdown(f'<img src="{htp}" class="image-inline-right">', unsafe_allow_html=True)
+
+# Display heading with color bar below the image
+st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
 
