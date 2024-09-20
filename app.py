@@ -52,9 +52,8 @@ st.image(htp, width=200)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Display heading with color bar below the image
-st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
+st.markdown('<div style="color: green;" class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
-
 
 
 # Template definitions
