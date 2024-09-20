@@ -15,7 +15,7 @@ model = genai.GenerativeModel(
     generation_config=generation_config,
 )
 
-# Custom CSS for background color and other styles
+# Custom CSS for background color, image positioning, and other styles
 st.markdown(
     """
     <style>
@@ -35,30 +35,24 @@ st.markdown(
         background-color: gold;
         margin-bottom: 20px;
     }
-    .note-dropdown {
-        color: white;
-        background-color: #005f40;
-        border: 1px solid #004d33;
-        padding: 5px;
-    }
-    .dropdown-container {
-        margin-bottom: 20px;
-    }
-    .image-right {
-        display: inline-block;
-        float: right;
-        width: 300px;
+    .image-container {
+        text-align: right;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Display heading with color bar and move image to the right
+# Display the image using st.image but apply CSS for right alignment
 htp = "logo1.png"
-#st.image(htp, width=200)
-st.markdown(f'<img src="{htp}" class="image-right">', unsafe_allow_html=True)  # Apply the right-aligned image style
-st.markdown('<div style="color: green;" class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
+
+# Add an HTML wrapper to float the image to the right
+st.markdown('<div class="image-container">', unsafe_allow_html=True)
+st.image(htp, width=200)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Display heading with color bar below the image
+st.markdown('<div class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
 
