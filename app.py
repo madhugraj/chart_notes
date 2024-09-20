@@ -47,10 +47,7 @@ st.markdown(
 htp = "logo1.png"
 
 # Add an HTML wrapper to float the image to the right
-st.markdown('<div class="image-container">', unsafe_allow_html=True)
-st.image(htp, width=200)
-st.markdown('</div>', unsafe_allow_html=True)
-
+st.markdown(f'<img src="logo1.png" class="image-inline-right">', unsafe_allow_html=True)
 # Display heading with color bar below the image
 st.markdown('<div style="color: green;" class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
