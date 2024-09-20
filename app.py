@@ -375,17 +375,24 @@ def highlight_citations(transcript, citations_dict, selected_note):
     if selected_note in citations_dict:
         citation_texts = citations_dict[selected_note]
 
-        for citation_text in citation_texts:
+        # Sort citations by length, longer ones first to avoid partial matches
+        citation_texts_sorted = sorted(citation_texts, key=len, reverse=True)
+
+        for citation_text in citation_texts_sorted:
+            # Escape the citation text for regex matching
             citation_text_escaped = re.escape(citation_text.strip())
+            
+            # Use word boundaries or exact matching to ensure full sentence match
             highlighted_transcript = re.sub(
-                citation_text_escaped,
+                r'\b' + citation_text_escaped + r'\b',
                 f"<mark style='background-color: yellow'>{citation_text.strip()}</mark>",
                 highlighted_transcript,
                 count=1,
                 flags=re.IGNORECASE
-            )           
+            )
 
     return highlighted_transcript
+
 
 # Initialize session state variables
 if "transcript" not in st.session_state:
