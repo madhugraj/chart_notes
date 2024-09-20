@@ -51,7 +51,7 @@ st.markdown(
 
 # Display heading with color bar
 htp="DS_logo.png"
-st.image(htp, caption= 'logo', width=350)
+st.image(htp, width=100)
 st.markdown('<div style="color: green;" class="heading">Smart Chart Notes</div>', unsafe_allow_html=True)
 st.markdown('<div class="color-bar"></div>', unsafe_allow_html=True)
 
